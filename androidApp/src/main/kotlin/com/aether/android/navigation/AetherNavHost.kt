@@ -27,6 +27,7 @@ import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsScreen
 import com.aether.android.ui.settings.SettingsViewModel
 import com.aether.core.data.AetherRepository
+import com.aether.core.data.GoalsRepository
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.ScoringEngine
 
@@ -42,6 +43,7 @@ private const val ROUTE_COMING_SOON = "coming_soon/{slug}"
 @Composable
 fun AetherNavHost(
     repository: AetherRepository,
+    goalsRepository: GoalsRepository,
     scoringEngine: ScoringEngine,
     contextEngine: ContextEngine,
     apiKeyStore: ApiKeyStore,
@@ -49,7 +51,7 @@ fun AetherNavHost(
 ) {
     val navController = rememberNavController()
     val factory = remember {
-        AetherViewModelFactory(repository, scoringEngine, contextEngine, apiKeyStore, groqScheduleClient)
+        AetherViewModelFactory(repository, goalsRepository, scoringEngine, contextEngine, apiKeyStore, groqScheduleClient)
     }
 
     val navigate: (String) -> Unit = { route ->

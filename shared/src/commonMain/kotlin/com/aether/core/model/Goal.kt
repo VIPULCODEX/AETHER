@@ -7,5 +7,11 @@ data class Goal(
     val targetDate: Long?,
     val createdAt: Long,
     val progress: Double,
-    val isArchived: Boolean
+    val isArchived: Boolean,
+    val goalType: GoalType,
+    val parentGoalId: String?,
+    val priority: Int?,
+    val estimatedEffort: Int?,
+    val estimatedImpact: Int?,
+    val aiImportanceScore: Double?
 )

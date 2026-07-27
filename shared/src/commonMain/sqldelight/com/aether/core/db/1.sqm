@@ -1,0 +1,31 @@
+-- Migration from schema v1 (pre-hierarchy) to v2: adds Goal hierarchy fields
+-- and the Task table backing "Today's Actions". Existing installs keep all
+-- their JournalEntry/Goal/DailyCheckIn/FocusArea/ScheduleSlot/UserProfile/
+-- ResearchNote data untouched; pre-existing Goal rows become root-level
+-- (parentGoalId NULL) WEEKLY-type goals, matching what they already were.
+
+ALTER TABLE Goal ADD COLUMN goalType TEXT NOT NULL DEFAULT 'WEEKLY';
+ALTER TABLE Goal ADD COLUMN parentGoalId TEXT REFERENCES Goal(id);
+ALTER TABLE Goal ADD COLUMN priority INTEGER;
+ALTER TABLE Goal ADD COLUMN estimatedEffort INTEGER;
+ALTER TABLE Goal ADD COLUMN estimatedImpact INTEGER;
+ALTER TABLE Goal ADD COLUMN aiImportanceScore REAL;
+
+CREATE INDEX idx_goal_parent ON Goal(parentGoalId);
+CREATE INDEX idx_goal_type ON Goal(goalType);
+
+CREATE TABLE Task (
+    id TEXT NOT NULL PRIMARY KEY,
+    goalId TEXT NOT NULL REFERENCES Goal(id),
+    title TEXT NOT NULL,
+    dueDate INTEGER,
+    priority INTEGER,
+    estimatedEffort INTEGER,
+    estimatedImpact INTEGER,
+    aiImportanceScore REAL,
+    isDone INTEGER NOT NULL DEFAULT 0,
+    completedAt INTEGER,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX idx_task_goal ON Task(goalId);

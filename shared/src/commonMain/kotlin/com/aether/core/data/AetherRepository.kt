@@ -5,7 +5,6 @@ import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.aether.core.db.AetherDatabase
 import com.aether.core.model.DailyCheckIn
-import com.aether.core.model.Goal
 import com.aether.core.model.JournalEntry
 import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
@@ -15,9 +14,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Single facade over the local Life Data Store. Everything in AETHER —
- * every module, the Scoring Engine, the Context Engine — reads and writes
- * through this repository. Nothing here ever leaves the device.
+ * Facade over the local Life Data Store for everything except Goals/Tasks
+ * (see [GoalsRepository]) — split out once the Goal hierarchy work made a
+ * single god-repository unmanageable. Nothing here ever leaves the device.
  */
 class AetherRepository(private val database: AetherDatabase) {
 
@@ -34,28 +33,6 @@ class AetherRepository(private val database: AetherDatabase) {
             content = content,
             mood = mood?.toLong()
         )
-    }
-
-    fun observeActiveGoals(): Flow<List<Goal>> =
-        database.aetherQueries.selectActiveGoals()
-            .asFlow()
-            .mapToList(Dispatchers.Default)
-            .map { rows -> rows.map { it.toDomain() } }
-
-    suspend fun addGoal(title: String, domain: String, targetDate: Long?) {
-        database.aetherQueries.insertGoal(
-            id = generateId(),
-            title = title,
-            domain = domain,
-            targetDate = targetDate,
-            createdAt = currentTimeMillis(),
-            progress = 0.0,
-            isArchived = 0L
-        )
-    }
-
-    suspend fun updateGoalProgress(goalId: String, progress: Double) {
-        database.aetherQueries.updateGoalProgress(progress, goalId)
     }
 
     fun observeRecentCheckIns(limit: Long = 14): Flow<List<DailyCheckIn>> =

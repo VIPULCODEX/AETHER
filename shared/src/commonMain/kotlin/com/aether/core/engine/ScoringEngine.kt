@@ -2,6 +2,8 @@ package com.aether.core.engine
 
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
+import com.aether.core.model.GoalType
+import com.aether.core.model.Task
 
 /**
  * Every field here must be traceable back to real logged data — no black-box
@@ -53,4 +55,44 @@ class ScoringEngine {
         if (active.isEmpty()) return 0
         return (active.map { it.progress }.average() * 100).toInt().coerceIn(0, 100)
     }
+
+    /**
+     * Rolls up progress toward a Goal from its subtree: if it has child goals,
+     * average their (recursively computed) progress; otherwise, if it has
+     * tasks, the fraction of those marked done; otherwise its own manually
+     * tracked `progress`. No black-box weighting — same "traceable back to
+     * real logged data" rule as the rest of this engine.
+     */
+    fun computeGoalTreeProgress(goalId: String, goals: List<Goal>, tasks: List<Task>): Double {
+        return rollUp(goalId, goals, tasks, mutableSetOf())
+    }
+
+    private fun rollUp(goalId: String, goals: List<Goal>, tasks: List<Task>, visited: MutableSet<String>): Double {
+        if (!visited.add(goalId)) return 0.0
+        val children = goals.filter { it.parentGoalId == goalId && !it.isArchived }
+        if (children.isNotEmpty()) {
+            return children.map { rollUp(it.id, goals, tasks, visited) }.average()
+        }
+        val ownTasks = tasks.filter { it.goalId == goalId }
+        if (ownTasks.isNotEmpty()) {
+            return ownTasks.count { it.isDone }.toDouble() / ownTasks.size
+        }
+        return goals.find { it.id == goalId }?.progress ?: 0.0
+    }
+
+    /** The nearest Life Vision goal and how close its whole subtree is to completion, for the Dashboard's identity card. */
+    fun computeLifeVisionProgress(goals: List<Goal>, tasks: List<Task>): LifeVisionProgress? {
+        val vision = goals
+            .filter { it.goalType == GoalType.LIFE_VISION && !it.isArchived }
+            .minByOrNull { it.createdAt }
+            ?: return null
+        val progress = computeGoalTreeProgress(vision.id, goals, tasks)
+        return LifeVisionProgress(
+            goalId = vision.id,
+            title = vision.title,
+            progressPercent = (progress * 100).toInt().coerceIn(0, 100)
+        )
+    }
 }
+
+data class LifeVisionProgress(val goalId: String, val title: String, val progressPercent: Int)

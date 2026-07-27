@@ -12,11 +12,13 @@ import com.aether.android.ui.journal.JournalViewModel
 import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsViewModel
 import com.aether.core.data.AetherRepository
+import com.aether.core.data.GoalsRepository
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.ScoringEngine
 
 class AetherViewModelFactory(
     private val repository: AetherRepository,
+    private val goalsRepository: GoalsRepository,
     private val scoringEngine: ScoringEngine,
     private val contextEngine: ContextEngine,
     private val apiKeyStore: ApiKeyStore,
@@ -27,13 +29,13 @@ class AetherViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         return when (modelClass) {
             DashboardViewModel::class.java ->
-                DashboardViewModel(repository, scoringEngine, contextEngine) as T
+                DashboardViewModel(repository, goalsRepository, scoringEngine, contextEngine) as T
 
             JournalViewModel::class.java ->
                 JournalViewModel(repository) as T
 
             GoalsViewModel::class.java ->
-                GoalsViewModel(repository, apiKeyStore, groqScheduleClient) as T
+                GoalsViewModel(repository, goalsRepository, apiKeyStore, groqScheduleClient) as T
 
             GymViewModel::class.java ->
                 GymViewModel(repository) as T
