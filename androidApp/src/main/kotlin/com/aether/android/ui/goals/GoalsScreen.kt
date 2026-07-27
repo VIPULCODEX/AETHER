@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +46,7 @@ fun GoalsScreen(
     var domainDraft by remember { mutableStateOf("") }
     var editingSlot by remember { mutableStateOf<ScheduleSlot?>(null) }
     var editText by remember { mutableStateOf("") }
+    var aiDescription by remember { mutableStateOf("") }
 
     AetherScaffold(title = "Goals", currentRoute = "goals", onNavigate = onNavigate) {
         LazyColumn(
@@ -84,10 +86,36 @@ fun GoalsScreen(
                 }
                 item {
                     Text(
-                        "Basic auto-generated split for now — a smarter, AI-generated version is coming. Tap any slot to edit it.",
+                        "Basic auto-generated split above. Tap any slot to edit it — or describe your " +
+                            "actual routine below and let AI build a better one.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = AetherTextSecondary
                     )
+                }
+                item {
+                    OutlinedTextField(
+                        value = aiDescription,
+                        onValueChange = { aiDescription = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. College 9-5 on weekdays, sleep by 11pm, prefer gym in the evening") }
+                    )
+                }
+                item {
+                    Button(
+                        onClick = { viewModel.generateWithAi(aiDescription) },
+                        enabled = !state.isGeneratingWithAi
+                    ) {
+                        if (state.isGeneratingWithAi) {
+                            CircularProgressIndicator(modifier = Modifier.height(20.dp))
+                        } else {
+                            Text("Generate with AI")
+                        }
+                    }
+                }
+                state.aiErrorMessage?.let { error ->
+                    item {
+                        Text(error, style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+                    }
                 }
             }
 

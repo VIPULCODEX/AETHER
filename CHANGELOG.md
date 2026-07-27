@@ -4,6 +4,26 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-07-27
+
+### Added
+- AI-generated scheduling via Groq (Llama 3.3 70B), bring-your-own-key:
+  a new Settings screen lets each user paste their own free Groq API key
+  (from console.groq.com/keys). Goals screen now has a free-text box
+  ("describe your routine and constraints") and a "Generate with AI"
+  button that calls Groq directly from the device using that key. Only
+  the focus areas and the typed description are sent — no other app data.
+  Errors from the API (bad key, rate limit, etc.) surface directly in the
+  UI instead of failing silently.
+- `INTERNET` permission added (required for the above; this is the app's
+  first and only network-dependent feature, and it's fully opt-in).
+
+### Changed
+- Dashboard no longer lists every active goal inline — that list had no
+  bound and would grow messy as goals were added. The Goals summary card
+  (with a count) is enough on the dashboard; the full list lives on the
+  Goals screen where it belongs.
+
 ## [0.3.0] - 2026-07-27
 
 ### Added

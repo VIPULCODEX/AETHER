@@ -1,6 +1,8 @@
 package com.aether.android
 
 import android.app.Application
+import com.aether.android.data.ApiKeyStore
+import com.aether.android.data.GroqScheduleClient
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.DatabaseDriverFactory
 import com.aether.core.db.AetherDatabase
@@ -12,12 +14,17 @@ class AetherApplication : Application() {
     lateinit var repository: AetherRepository
         private set
 
+    lateinit var apiKeyStore: ApiKeyStore
+        private set
+
     val scoringEngine = ScoringEngine()
     val contextEngine = ContextEngine()
+    val groqScheduleClient = GroqScheduleClient()
 
     override fun onCreate() {
         super.onCreate()
         val driver = DatabaseDriverFactory(this).createDriver()
         repository = AetherRepository(AetherDatabase(driver))
+        apiKeyStore = ApiKeyStore(this)
     }
 }

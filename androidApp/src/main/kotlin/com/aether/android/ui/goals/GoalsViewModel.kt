@@ -2,25 +2,35 @@ package com.aether.android.ui.goals
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aether.android.data.ApiKeyStore
+import com.aether.android.data.GroqScheduleClient
 import com.aether.core.data.AetherRepository
 import com.aether.core.engine.BasicScheduleGenerator
 import com.aether.core.model.Goal
 import com.aether.core.model.ScheduleSlot
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 val STANDARD_FOCUS_AREAS = listOf("Gym", "Research", "GATE", "JEE", "College Work")
 
 data class GoalsUiState(
     val goals: List<Goal> = emptyList(),
     val focusAreas: List<String> = emptyList(),
-    val scheduleSlots: List<ScheduleSlot> = emptyList()
+    val scheduleSlots: List<ScheduleSlot> = emptyList(),
+    val isGeneratingWithAi: Boolean = false,
+    val aiErrorMessage: String? = null
 )
 
-class GoalsViewModel(private val repository: AetherRepository) : ViewModel() {
+class GoalsViewModel(
+    private val repository: AetherRepository,
+    private val apiKeyStore: ApiKeyStore,
+    private val groqClient: GroqScheduleClient
+) : ViewModel() {
 
     private val scheduleGenerator = BasicScheduleGenerator()
 
@@ -35,7 +45,11 @@ class GoalsViewModel(private val repository: AetherRepository) : ViewModel() {
                 repository.observeScheduleSlots()
             ) { goals, focusAreas, slots -> Triple(goals, focusAreas, slots) }
                 .collect { (goals, focusAreas, slots) ->
-                    _uiState.value = GoalsUiState(goals, focusAreas, slots)
+                    _uiState.value = _uiState.value.copy(
+                        goals = goals,
+                        focusAreas = focusAreas,
+                        scheduleSlots = slots
+                    )
                 }
         }
     }
@@ -62,6 +76,33 @@ class GoalsViewModel(private val repository: AetherRepository) : ViewModel() {
         viewModelScope.launch {
             val slots = scheduleGenerator.generate(_uiState.value.focusAreas)
             repository.regenerateSchedule(slots)
+        }
+    }
+
+    fun generateWithAi(description: String) {
+        val apiKey = apiKeyStore.getGroqKey()
+        if (apiKey == null) {
+            _uiState.value = _uiState.value.copy(
+                aiErrorMessage = "Add a Groq API key in Settings first (it's free)."
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isGeneratingWithAi = true, aiErrorMessage = null)
+            try {
+                val focusAreas = _uiState.value.focusAreas
+                val slots = withContext(Dispatchers.IO) {
+                    groqClient.generateSchedule(apiKey, focusAreas, description)
+                }
+                repository.regenerateSchedule(slots)
+                _uiState.value = _uiState.value.copy(isGeneratingWithAi = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isGeneratingWithAi = false,
+                    aiErrorMessage = e.message ?: "AI schedule generation failed."
+                )
+            }
         }
     }
 

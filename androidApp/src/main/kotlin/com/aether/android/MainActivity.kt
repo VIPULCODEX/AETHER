@@ -19,7 +19,9 @@ class MainActivity : ComponentActivity() {
                 AetherNavHost(
                     repository = app.repository,
                     scoringEngine = app.scoringEngine,
-                    contextEngine = app.contextEngine
+                    contextEngine = app.contextEngine,
+                    apiKeyStore = app.apiKeyStore,
+                    groqScheduleClient = app.groqScheduleClient
                 )
             }
         }
