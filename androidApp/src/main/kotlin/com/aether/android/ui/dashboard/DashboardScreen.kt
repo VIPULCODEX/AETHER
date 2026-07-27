@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +22,6 @@ import com.aether.android.ui.theme.AetherCoral
 import com.aether.android.ui.theme.AetherInk
 import com.aether.android.ui.theme.AetherMagenta
 import com.aether.android.ui.theme.AetherTeal
-import com.aether.android.ui.theme.AetherTextSecondary
 
 @Composable
 fun DashboardScreen(
@@ -112,26 +110,6 @@ fun DashboardScreen(
                     Text("Journal", style = MaterialTheme.typography.titleMedium, color = AetherInk)
                     Spacer(Modifier.height(4.dp))
                     Text("Reflect on today.", style = MaterialTheme.typography.bodyMedium, color = AetherInk)
-                }
-            }
-
-            if (state.activeGoals.isNotEmpty()) {
-                item {
-                    Text(
-                        "Active goals",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = AetherTextSecondary
-                    )
-                }
-                items(state.activeGoals) { goal ->
-                    BlockCard(
-                        accentColor = AetherMagenta,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { onNavigate("goals") }
-                    ) {
-                        Text(goal.title, style = MaterialTheme.typography.bodyLarge, color = AetherInk)
-                        Text(goal.domain, style = MaterialTheme.typography.bodyMedium, color = AetherInk)
-                    }
                 }
             }
         }

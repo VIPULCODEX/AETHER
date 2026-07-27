@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Needed only for the opt-in, bring-your-own-key AI schedule generation (Groq). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".AetherApplication"
         android:allowBackup="false"

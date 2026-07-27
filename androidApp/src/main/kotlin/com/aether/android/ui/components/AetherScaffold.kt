@@ -42,7 +42,8 @@ val AETHER_NAV_ITEMS = listOf(
     NavItem("Goals", "goals"),
     NavItem("Gym", "gym"),
     NavItem("Research OS", "coming_soon/research"),
-    NavItem("GATE Prep", "coming_soon/gate")
+    NavItem("GATE Prep", "coming_soon/gate"),
+    NavItem("Settings", "settings")
 )
 
 /**
