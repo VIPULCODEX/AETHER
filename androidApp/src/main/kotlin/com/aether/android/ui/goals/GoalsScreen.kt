@@ -26,10 +26,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.aether.android.ui.components.AccentCard
 import com.aether.android.ui.components.AetherScaffold
-import com.aether.android.ui.components.BlockCard
-import com.aether.android.ui.theme.AetherInk
-import com.aether.android.ui.theme.AetherMagenta
+import com.aether.android.ui.theme.AetherOnAccent
+import com.aether.android.ui.theme.AetherRose
 import com.aether.android.ui.theme.AetherSky
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.aether.core.model.ScheduleSlot
@@ -71,7 +71,7 @@ fun GoalsScreen(
                             label = { Text(area) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AetherSky,
-                                selectedLabelColor = AetherInk
+                                selectedLabelColor = AetherOnAccent
                             )
                         )
                     }
@@ -131,7 +131,7 @@ fun GoalsScreen(
                             )
                         }
                         items(daySlots) { slot ->
-                            BlockCard(
+                            AccentCard(
                                 accentColor = AetherSky,
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = {
@@ -139,9 +139,9 @@ fun GoalsScreen(
                                     editText = slot.activityLabel
                                 }
                             ) {
-                                Text(slot.timeLabel, style = MaterialTheme.typography.labelSmall, color = AetherInk)
+                                Text(slot.timeLabel, style = MaterialTheme.typography.labelSmall, color = AetherOnAccent)
                                 Spacer(Modifier.height(4.dp))
-                                Text(slot.activityLabel, style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                                Text(slot.activityLabel, style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                             }
                         }
                     }
@@ -179,10 +179,10 @@ fun GoalsScreen(
             }
 
             items(state.goals) { goal ->
-                BlockCard(accentColor = AetherMagenta, modifier = Modifier.fillMaxWidth()) {
-                    Text(goal.title, style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                AccentCard(accentColor = AetherRose, modifier = Modifier.fillMaxWidth()) {
+                    Text(goal.title, style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                     Spacer(Modifier.height(4.dp))
-                    Text(goal.domain, style = MaterialTheme.typography.bodyMedium, color = AetherInk)
+                    Text(goal.domain, style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
                 }
             }
 

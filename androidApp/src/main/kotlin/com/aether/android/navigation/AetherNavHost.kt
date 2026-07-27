@@ -13,6 +13,7 @@ import com.aether.android.AetherViewModelFactory
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.android.ui.common.ComingSoonScreen
+import com.aether.android.ui.common.MoreScreen
 import com.aether.android.ui.dashboard.DashboardScreen
 import com.aether.android.ui.dashboard.DashboardViewModel
 import com.aether.android.ui.goals.GoalsScreen
@@ -21,6 +22,8 @@ import com.aether.android.ui.gym.GymScreen
 import com.aether.android.ui.gym.GymViewModel
 import com.aether.android.ui.journal.JournalScreen
 import com.aether.android.ui.journal.JournalViewModel
+import com.aether.android.ui.research.ResearchScreen
+import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsScreen
 import com.aether.android.ui.settings.SettingsViewModel
 import com.aether.core.data.AetherRepository
@@ -32,6 +35,8 @@ private const val ROUTE_JOURNAL = "journal"
 private const val ROUTE_GOALS = "goals"
 private const val ROUTE_GYM = "gym"
 private const val ROUTE_SETTINGS = "settings"
+private const val ROUTE_MORE = "more"
+private const val ROUTE_RESEARCH = "research"
 private const val ROUTE_COMING_SOON = "coming_soon/{slug}"
 
 @Composable
@@ -75,6 +80,13 @@ fun AetherNavHost(
         composable(ROUTE_SETTINGS) {
             val viewModel: SettingsViewModel = viewModel(factory = factory)
             SettingsScreen(viewModel = viewModel, onNavigate = navigate)
+        }
+        composable(ROUTE_MORE) {
+            MoreScreen(onNavigate = navigate)
+        }
+        composable(ROUTE_RESEARCH) {
+            val viewModel: ResearchViewModel = viewModel(factory = factory)
+            ResearchScreen(viewModel = viewModel, onNavigate = navigate)
         }
         composable(
             route = ROUTE_COMING_SOON,

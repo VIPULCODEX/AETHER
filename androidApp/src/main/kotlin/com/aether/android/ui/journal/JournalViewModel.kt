@@ -20,10 +20,10 @@ class JournalViewModel(private val repository: AetherRepository) : ViewModel() {
         }
     }
 
-    fun addEntry(content: String) {
+    fun addEntry(content: String, mood: Int?) {
         if (content.isBlank()) return
         viewModelScope.launch {
-            repository.addJournalEntry(content.trim(), mood = null)
+            repository.addJournalEntry(content.trim(), mood)
         }
     }
 }

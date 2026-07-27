@@ -4,6 +4,40 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-07-27
+
+### Fixed
+- Status bar overlap: the old hamburger drawer icon collided with the phone's
+  status bar because `enableEdgeToEdge()` was on but nothing accounted for
+  system-bar insets. Replaced entirely (see below), so this class of bug
+  goes away rather than being patched.
+
+### Changed
+- Navigation rebuilt as a bottom tab bar (Home/Goals/Gym/Journal/More) using
+  Material3 `Scaffold`, which handles system-bar insets correctly — more
+  native to the iOS-leaning direction than a Material drawer ever was, and
+  fixes the overlap bug structurally instead of patching padding onto the
+  old drawer.
+- Full visual pass toward an iOS/ColorOS/OxygenOS blend: cards (`AccentCard`,
+  replacing `BlockCard`) are now solid, deep-toned tiles with a subtle
+  vertical gradient and white text, no thick border — softer and more
+  "premium app" than the earlier flat poster-block look.
+- Dashboard's Life Score card no longer shows raw
+  "Consistency X · Execution Y · Goals Z%" numbers — replaced with a 7-dot
+  weekly strip showing which of the last 7 days the mission was completed,
+  a more legible, useful "how's this week going" glance.
+- Gym's 4-day split corrected from the earlier bodybuilding-style split to
+  Push / Pull / Legs / Full Body, with updated exercises and posture cues.
+- Journal: added mood chips (😊😐😔 etc., tap to tag an entry) and an
+  "entries this month" line, so the screen isn't just a bare text box.
+
+### Added
+- Research module (previously a placeholder): gated behind "Research" being
+  a selected focus area, same pattern as Gym. Log papers/ideas with a
+  status (Idea/Reading/Read/Writing) and a note.
+- More screen: houses Research, GATE Prep (still not built), and Settings,
+  reached via the bottom bar's "More" tab.
+
 ## [0.4.1] - 2026-07-27
 
 ### Fixed
