@@ -2,18 +2,26 @@ package com.aether.android.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Layered near-black, never pure OLED black — gives depth instead of flatness.
-val AetherBackground = Color(0xFF0A0A0A)
-val AetherSurface1 = Color(0xFF141416)
-val AetherSurface2 = Color(0xFF1C1C1F)
-val AetherSurface3 = Color(0xFF242428)
+// Deep indigo-black backdrop — retro-arcade dark, not flat OLED black.
+val AetherBackground = Color(0xFF12101B)
+val AetherSurface1 = Color(0xFF1D1930)
+val AetherSurface2 = Color(0xFF262040)
 
-// Hierarchy via opacity, not competing colors.
-val AetherTextPrimary = Color(0xFFF2F2F2)
-val AetherTextSecondary = Color(0xFF8A8A8E)
+// Text on the dark backdrop.
+val AetherTextPrimary = Color(0xFFF5F1E8)
+val AetherTextSecondary = Color(0xFFA79FC0)
 
-// The one accent in the entire app — reserved exclusively for positive
-// trajectory / growth signals. Never used decoratively.
-val AetherAccent = Color(0xFF7C93A8)
+// Thick block outline — pops against the dark backdrop.
+val AetherOutline = Color(0xFFF5F1E8)
 
-val AetherHairline = Color(0x1AFFFFFF)
+// Ink used for text sitting on top of the bright block colors below.
+val AetherInk = Color(0xFF181521)
+
+// Bold, flat, retro block colors — one per module, used as solid fills
+// (not translucent glass). Chosen bright enough that AetherInk stays readable.
+val AetherAmber = Color(0xFFFFC145)   // Life Score
+val AetherCoral = Color(0xFFFF6B4A)   // Today's Mission (pending)
+val AetherTeal = Color(0xFF3DDC97)    // Today's Mission (done) / Journal
+val AetherMagenta = Color(0xFFFF4FA0) // Goals
+val AetherSky = Color(0xFF5EC8F2)     // Selected nav / highlights
+val AetherViolet = Color(0xFF8C7CFA)  // Coming-soon / not-yet-built modules

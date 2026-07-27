@@ -9,18 +9,18 @@ import androidx.compose.ui.unit.sp
 // (Inter / Satoshi-class) once font assets are added to the project.
 val AetherTypography = Typography(
     headlineLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 34.sp,
         lineHeight = 40.sp,
         letterSpacing = (-0.5).sp
     ),
     headlineMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 24.sp,
         lineHeight = 32.sp
     ),
     titleMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp
     ),

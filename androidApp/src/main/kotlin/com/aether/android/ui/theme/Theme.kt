@@ -9,10 +9,10 @@ private val AetherColorScheme = darkColorScheme(
     background = AetherBackground,
     surface = AetherSurface1,
     surfaceVariant = AetherSurface2,
-    primary = AetherAccent,
+    primary = AetherSky,
     onBackground = AetherTextPrimary,
     onSurface = AetherTextPrimary,
-    onPrimary = AetherTextPrimary,
+    onPrimary = AetherInk,
     secondary = AetherTextSecondary
 )
 
