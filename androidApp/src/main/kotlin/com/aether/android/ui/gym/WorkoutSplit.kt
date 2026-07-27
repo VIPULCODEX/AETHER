@@ -1,34 +1,33 @@
 package com.aether.android.ui.gym
 
 /**
- * Curated, text-described 4-day split. No photos/GIFs are included yet —
- * that needs either bundled licensed images or a live exercise-database
- * API, neither of which can be safely wired up without the ability to
- * verify them here. The posture cues below are the well-established,
- * standard form points for each lift.
+ * Push / Pull / Legs / Full Body — a standard 4-day split. No photos/GIFs
+ * yet, same reasoning as before: can't reliably source or verify an image
+ * pipeline from inside this environment, so these are accurate text posture
+ * cues instead of guessing at an image integration that might silently break.
  */
 data class Exercise(val name: String, val postureCue: String)
 data class WorkoutDay(val title: String, val exercises: List<Exercise>)
 
 val FOUR_DAY_SPLIT = listOf(
     WorkoutDay(
-        "Day 1 · Chest & Triceps",
+        "Day 1 · Push (Chest, Shoulders, Triceps)",
         listOf(
             Exercise("Barbell Bench Press", "Shoulder blades pinched back, feet flat, bar to mid-chest, elbows ~45° from torso."),
+            Exercise("Overhead Press", "Brace core, bar path stays close to face, don't overarch the lower back."),
             Exercise("Incline Dumbbell Press", "30-45° incline, control the negative, don't let elbows flare past shoulder line."),
-            Exercise("Chest Dips", "Lean forward slightly for chest emphasis, stop at 90° elbow bend, don't overextend shoulders."),
-            Exercise("Cable Triceps Pushdown", "Elbows pinned to sides, full extension, no swinging."),
-            Exercise("Overhead Triceps Extension", "Elbows stay close to head, full stretch at the bottom.")
+            Exercise("Lateral Raise", "Slight elbow bend, lead with elbows not hands, stop at shoulder height."),
+            Exercise("Cable Triceps Pushdown", "Elbows pinned to sides, full extension, no swinging.")
         )
     ),
     WorkoutDay(
-        "Day 2 · Back & Biceps",
+        "Day 2 · Pull (Back, Biceps)",
         listOf(
             Exercise("Deadlift", "Neutral spine, bar close to shins, drive through heels, hips and shoulders rise together."),
             Exercise("Lat Pulldown / Pull-ups", "Lead with elbows, squeeze shoulder blades at the bottom, avoid swinging."),
             Exercise("Barbell Row", "Flat back, hinge at hips, pull to lower ribcage, no jerking the weight up."),
-            Exercise("Barbell Bicep Curl", "Elbows fixed at sides, no swinging the torso, full range of motion."),
-            Exercise("Hammer Curl", "Neutral grip, controlled tempo, elbows stay stationary.")
+            Exercise("Face Pull", "Pull to eye level, externally rotate at the end, focus on rear delts."),
+            Exercise("Barbell Bicep Curl", "Elbows fixed at sides, no swinging the torso, full range of motion.")
         )
     ),
     WorkoutDay(
@@ -42,12 +41,12 @@ val FOUR_DAY_SPLIT = listOf(
         )
     ),
     WorkoutDay(
-        "Day 4 · Shoulders & Abs",
+        "Day 4 · Full Body",
         listOf(
-            Exercise("Overhead Press", "Brace core, bar path stays close to face, don't overarch the lower back."),
-            Exercise("Lateral Raise", "Slight elbow bend, lead with elbows not hands, stop at shoulder height."),
-            Exercise("Face Pull", "Pull to eye level, externally rotate at the end, focus on rear delts."),
-            Exercise("Hanging Leg Raise", "Avoid swinging, control the descent, engage the lower abs."),
+            Exercise("Front Squat", "Elbows high, bar rests on front delts, torso stays upright through the descent."),
+            Exercise("Weighted Pull-ups", "Full hang at the bottom, chest to bar, no kipping."),
+            Exercise("Dumbbell Overhead Press", "Neutral or slight forward grip, ribs down, don't hyperextend the lower back."),
+            Exercise("Hip Thrust", "Chin tucked, drive through heels, full lockout squeeze at the top."),
             Exercise("Plank", "Straight line from shoulders to heels, don't let hips sag or pike.")
         )
     )

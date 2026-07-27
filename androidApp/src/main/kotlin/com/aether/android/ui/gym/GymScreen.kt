@@ -23,10 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.aether.android.ui.components.AccentCard
 import com.aether.android.ui.components.AetherScaffold
-import com.aether.android.ui.components.BlockCard
-import com.aether.android.ui.theme.AetherInk
-import com.aether.android.ui.theme.AetherLime
+import com.aether.android.ui.theme.AetherFlame
+import com.aether.android.ui.theme.AetherOnAccent
 import com.aether.android.ui.theme.AetherSky
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.aether.core.engine.ActivityLevel
@@ -107,7 +107,7 @@ fun GymScreen(
                             label = { Text(if (male) "Male" else "Female") },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AetherSky,
-                                selectedLabelColor = AetherInk
+                                selectedLabelColor = AetherOnAccent
                             )
                         )
                     }
@@ -124,7 +124,7 @@ fun GymScreen(
                             label = { Text(level.label) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AetherSky,
-                                selectedLabelColor = AetherInk
+                                selectedLabelColor = AetherOnAccent
                             )
                         )
                     }
@@ -141,7 +141,7 @@ fun GymScreen(
                             label = { Text(goal.label) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AetherSky,
-                                selectedLabelColor = AetherInk
+                                selectedLabelColor = AetherOnAccent
                             )
                         )
                     }
@@ -163,20 +163,20 @@ fun GymScreen(
 
             state.plan?.let { plan ->
                 item {
-                    BlockCard(accentColor = AetherLime, modifier = Modifier.fillMaxWidth()) {
-                        Text("Maintenance (TDEE)", style = MaterialTheme.typography.labelSmall, color = AetherInk)
-                        Text("${plan.tdee} kcal/day", style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                    AccentCard(accentColor = AetherFlame, modifier = Modifier.fillMaxWidth()) {
+                        Text("Maintenance (TDEE)", style = MaterialTheme.typography.labelSmall, color = AetherOnAccent)
+                        Text("${plan.tdee} kcal/day", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                         Spacer(Modifier.height(8.dp))
-                        Text("Target intake", style = MaterialTheme.typography.labelSmall, color = AetherInk)
-                        Text("${plan.targetCalories} kcal/day", style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                        Text("Target intake", style = MaterialTheme.typography.labelSmall, color = AetherOnAccent)
+                        Text("${plan.targetCalories} kcal/day", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                         Spacer(Modifier.height(8.dp))
-                        Text("Protein target", style = MaterialTheme.typography.labelSmall, color = AetherInk)
-                        Text("${plan.proteinGrams} g/day", style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                        Text("Protein target", style = MaterialTheme.typography.labelSmall, color = AetherOnAccent)
+                        Text("${plan.proteinGrams} g/day", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "BMR: ${plan.bmr} kcal · general fitness guidance, not medical advice.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = AetherInk
+                            color = AetherOnAccent
                         )
                     }
                 }
@@ -193,12 +193,12 @@ fun GymScreen(
             }
 
             items(FOUR_DAY_SPLIT) { day ->
-                BlockCard(accentColor = AetherLime, modifier = Modifier.fillMaxWidth()) {
-                    Text(day.title, style = MaterialTheme.typography.titleMedium, color = AetherInk)
+                AccentCard(accentColor = AetherFlame, modifier = Modifier.fillMaxWidth()) {
+                    Text(day.title, style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
                     Spacer(Modifier.height(8.dp))
                     day.exercises.forEach { exercise ->
-                        Text(exercise.name, style = MaterialTheme.typography.bodyLarge, color = AetherInk)
-                        Text(exercise.postureCue, style = MaterialTheme.typography.bodyMedium, color = AetherInk)
+                        Text(exercise.name, style = MaterialTheme.typography.bodyLarge, color = AetherOnAccent)
+                        Text(exercise.postureCue, style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
                         Spacer(Modifier.height(8.dp))
                     }
                 }

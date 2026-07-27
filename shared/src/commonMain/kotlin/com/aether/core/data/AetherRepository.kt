@@ -7,6 +7,7 @@ import com.aether.core.db.AetherDatabase
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
 import com.aether.core.model.JournalEntry
+import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
 import com.aether.core.model.UserProfile
 import kotlinx.coroutines.Dispatchers
@@ -130,5 +131,25 @@ class AetherRepository(private val database: AetherDatabase) {
             activityLevel = profile.activityLevel,
             bodyGoal = profile.bodyGoal
         )
+    }
+
+    fun observeResearchNotes(): Flow<List<ResearchNote>> =
+        database.aetherQueries.selectAllResearchNotes()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> rows.map { it.toDomain() } }
+
+    suspend fun addResearchNote(title: String, note: String, status: String) {
+        database.aetherQueries.insertResearchNote(
+            id = generateId(),
+            title = title,
+            note = note,
+            status = status,
+            createdAt = currentTimeMillis()
+        )
+    }
+
+    suspend fun deleteResearchNote(id: String) {
+        database.aetherQueries.deleteResearchNote(id)
     }
 }

@@ -9,6 +9,7 @@ import com.aether.android.ui.dashboard.DashboardViewModel
 import com.aether.android.ui.goals.GoalsViewModel
 import com.aether.android.ui.gym.GymViewModel
 import com.aether.android.ui.journal.JournalViewModel
+import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsViewModel
 import com.aether.core.data.AetherRepository
 import com.aether.core.engine.ContextEngine
@@ -39,6 +40,9 @@ class AetherViewModelFactory(
 
             SettingsViewModel::class.java ->
                 SettingsViewModel(apiKeyStore) as T
+
+            ResearchViewModel::class.java ->
+                ResearchViewModel(repository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

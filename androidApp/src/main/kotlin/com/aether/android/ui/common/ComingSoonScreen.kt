@@ -14,8 +14,6 @@ import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.theme.AetherTextSecondary
 
 private val TITLES = mapOf(
-    "gym" to "Gym",
-    "research" to "Research OS",
     "gate" to "GATE Prep"
 )
 

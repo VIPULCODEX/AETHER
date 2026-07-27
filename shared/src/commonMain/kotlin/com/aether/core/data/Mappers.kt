@@ -3,11 +3,13 @@ package com.aether.core.data
 import com.aether.core.db.DailyCheckIn as DailyCheckInRow
 import com.aether.core.db.Goal as GoalRow
 import com.aether.core.db.JournalEntry as JournalEntryRow
+import com.aether.core.db.ResearchNote as ResearchNoteRow
 import com.aether.core.db.ScheduleSlot as ScheduleSlotRow
 import com.aether.core.db.UserProfile as UserProfileRow
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
 import com.aether.core.model.JournalEntry
+import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
 import com.aether.core.model.UserProfile
 
@@ -51,4 +53,12 @@ internal fun UserProfileRow.toDomain() = UserProfile(
     isMale = isMale?.let { it == 1L },
     activityLevel = activityLevel,
     bodyGoal = bodyGoal
+)
+
+internal fun ResearchNoteRow.toDomain() = ResearchNote(
+    id = id,
+    title = title,
+    note = note,
+    status = status,
+    createdAt = createdAt
 )

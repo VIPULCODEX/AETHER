@@ -21,7 +21,9 @@ data class DashboardUiState(
     val lifeScore: LifeScoreBreakdown = LifeScoreBreakdown(0, 0, 0, 0),
     val suggestion: Suggestion? = null,
     val activeGoals: List<Goal> = emptyList(),
-    val missionDoneToday: Boolean = false
+    val missionDoneToday: Boolean = false,
+    /** Oldest to newest, ending today — whether the mission was done that day. */
+    val weekStrip: List<Boolean> = List(7) { false }
 )
 
 class DashboardViewModel(
@@ -50,11 +52,18 @@ class DashboardViewModel(
                     val hour = LocalTime.now().hour
                     val suggestion = contextEngine.suggestNow(hour, todayCheckIn, goals)
 
+                    val todayDate = LocalDate.now()
+                    val weekStrip = (6 downTo 0).map { offset ->
+                        val date = todayDate.minusDays(offset.toLong()).toString()
+                        checkIns.find { it.date == date }?.executedMission == true
+                    }
+
                     _uiState.value = DashboardUiState(
                         lifeScore = lifeScore,
                         suggestion = suggestion,
                         activeGoals = goals,
-                        missionDoneToday = todayCheckIn?.executedMission == true
+                        missionDoneToday = todayCheckIn?.executedMission == true,
+                        weekStrip = weekStrip
                     )
                 }
         }
