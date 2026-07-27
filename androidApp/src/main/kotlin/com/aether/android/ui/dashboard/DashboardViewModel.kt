@@ -7,18 +7,21 @@ import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.LifeScoreBreakdown
 import com.aether.core.engine.ScoringEngine
 import com.aether.core.engine.Suggestion
+import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalTime
 
 data class DashboardUiState(
     val lifeScore: LifeScoreBreakdown = LifeScoreBreakdown(0, 0, 0, 0),
     val suggestion: Suggestion? = null,
-    val activeGoals: List<Goal> = emptyList()
+    val activeGoals: List<Goal> = emptyList(),
+    val missionDoneToday: Boolean = false
 )
 
 class DashboardViewModel(
@@ -30,6 +33,8 @@ class DashboardViewModel(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    private var latestCheckIns: List<DailyCheckIn> = emptyList()
+
     init {
         viewModelScope.launch {
             combine(
@@ -37,11 +42,36 @@ class DashboardViewModel(
                 repository.observeActiveGoals()
             ) { checkIns, goals -> checkIns to goals }
                 .collect { (checkIns, goals) ->
+                    latestCheckIns = checkIns
+                    val today = LocalDate.now().toString()
+                    val todayCheckIn = checkIns.find { it.date == today }
+
                     val lifeScore = scoringEngine.compute(checkIns, goals)
                     val hour = LocalTime.now().hour
-                    val suggestion = contextEngine.suggestNow(hour, checkIns.firstOrNull(), goals)
-                    _uiState.value = DashboardUiState(lifeScore, suggestion, goals)
+                    val suggestion = contextEngine.suggestNow(hour, todayCheckIn, goals)
+
+                    _uiState.value = DashboardUiState(
+                        lifeScore = lifeScore,
+                        suggestion = suggestion,
+                        activeGoals = goals,
+                        missionDoneToday = todayCheckIn?.executedMission == true
+                    )
                 }
+        }
+    }
+
+    /** Marks (or unmarks) today's mission as done — this is what actually feeds Execution Score. */
+    fun toggleMissionDone() {
+        viewModelScope.launch {
+            val today = LocalDate.now().toString()
+            val todayCheckIn = latestCheckIns.find { it.date == today }
+            repository.upsertTodayCheckIn(
+                date = today,
+                mood = todayCheckIn?.mood,
+                energy = todayCheckIn?.energy,
+                sleepHours = todayCheckIn?.sleepHours,
+                executedMission = todayCheckIn?.executedMission != true
+            )
         }
     }
 }
