@@ -52,3 +52,54 @@ VALUES (?, ?, ?, ?, ?);
 
 selectRecentCheckIns:
 SELECT * FROM DailyCheckIn ORDER BY date DESC LIMIT ?;
+
+CREATE TABLE FocusArea (
+    name TEXT NOT NULL PRIMARY KEY
+);
+
+insertFocusArea:
+INSERT OR IGNORE INTO FocusArea(name) VALUES (?);
+
+deleteFocusArea:
+DELETE FROM FocusArea WHERE name = ?;
+
+selectFocusAreas:
+SELECT * FROM FocusArea;
+
+CREATE TABLE ScheduleSlot (
+    id TEXT NOT NULL PRIMARY KEY,
+    dayOfWeek INTEGER NOT NULL,
+    timeLabel TEXT NOT NULL,
+    activityLabel TEXT NOT NULL,
+    domain TEXT NOT NULL
+);
+
+insertScheduleSlot:
+INSERT INTO ScheduleSlot(id, dayOfWeek, timeLabel, activityLabel, domain)
+VALUES (?, ?, ?, ?, ?);
+
+selectAllScheduleSlots:
+SELECT * FROM ScheduleSlot ORDER BY dayOfWeek, timeLabel;
+
+updateScheduleSlotLabel:
+UPDATE ScheduleSlot SET activityLabel = ? WHERE id = ?;
+
+deleteAllScheduleSlots:
+DELETE FROM ScheduleSlot;
+
+CREATE TABLE UserProfile (
+    id INTEGER NOT NULL PRIMARY KEY DEFAULT 1,
+    heightCm REAL,
+    weightKg REAL,
+    age INTEGER,
+    isMale INTEGER,
+    activityLevel TEXT,
+    bodyGoal TEXT
+);
+
+upsertUserProfile:
+INSERT OR REPLACE INTO UserProfile(id, heightCm, weightKg, age, isMale, activityLevel, bodyGoal)
+VALUES (1, ?, ?, ?, ?, ?, ?);
+
+selectUserProfile:
+SELECT * FROM UserProfile WHERE id = 1;

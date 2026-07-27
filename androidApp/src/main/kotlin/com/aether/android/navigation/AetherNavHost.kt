@@ -15,6 +15,8 @@ import com.aether.android.ui.dashboard.DashboardScreen
 import com.aether.android.ui.dashboard.DashboardViewModel
 import com.aether.android.ui.goals.GoalsScreen
 import com.aether.android.ui.goals.GoalsViewModel
+import com.aether.android.ui.gym.GymScreen
+import com.aether.android.ui.gym.GymViewModel
 import com.aether.android.ui.journal.JournalScreen
 import com.aether.android.ui.journal.JournalViewModel
 import com.aether.core.data.AetherRepository
@@ -24,6 +26,7 @@ import com.aether.core.engine.ScoringEngine
 private const val ROUTE_DASHBOARD = "dashboard"
 private const val ROUTE_JOURNAL = "journal"
 private const val ROUTE_GOALS = "goals"
+private const val ROUTE_GYM = "gym"
 private const val ROUTE_COMING_SOON = "coming_soon/{slug}"
 
 @Composable
@@ -55,6 +58,10 @@ fun AetherNavHost(
         composable(ROUTE_GOALS) {
             val viewModel: GoalsViewModel = viewModel(factory = factory)
             GoalsScreen(viewModel = viewModel, onNavigate = navigate)
+        }
+        composable(ROUTE_GYM) {
+            val viewModel: GymViewModel = viewModel(factory = factory)
+            GymScreen(viewModel = viewModel, onNavigate = navigate)
         }
         composable(
             route = ROUTE_COMING_SOON,

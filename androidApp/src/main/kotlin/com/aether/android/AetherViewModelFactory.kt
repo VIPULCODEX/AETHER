@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.aether.android.ui.dashboard.DashboardViewModel
 import com.aether.android.ui.goals.GoalsViewModel
+import com.aether.android.ui.gym.GymViewModel
 import com.aether.android.ui.journal.JournalViewModel
 import com.aether.core.data.AetherRepository
 import com.aether.core.engine.ContextEngine
@@ -27,6 +28,9 @@ class AetherViewModelFactory(
 
             GoalsViewModel::class.java ->
                 GoalsViewModel(repository) as T
+
+            GymViewModel::class.java ->
+                GymViewModel(repository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

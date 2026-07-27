@@ -25,3 +25,4 @@ val AetherTeal = Color(0xFF3DDC97)    // Today's Mission (done) / Journal
 val AetherMagenta = Color(0xFFFF4FA0) // Goals
 val AetherSky = Color(0xFF5EC8F2)     // Selected nav / highlights
 val AetherViolet = Color(0xFF8C7CFA)  // Coming-soon / not-yet-built modules
+val AetherLime = Color(0xFFC7F464)    // Gym
