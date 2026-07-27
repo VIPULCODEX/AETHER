@@ -34,10 +34,10 @@ class ResearchViewModel(private val repository: AetherRepository) : ViewModel() 
         }
     }
 
-    fun addNote(title: String, note: String, status: String) {
+    fun addNote(title: String, note: String, status: String, attachmentUri: String? = null) {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.addResearchNote(title.trim(), note.trim(), status)
+            repository.addResearchNote(title.trim(), note.trim(), status, attachmentUri)
         }
     }
 

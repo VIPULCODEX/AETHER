@@ -3,6 +3,8 @@ package com.aether.android
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.aether.android.alarm.AlarmPreferences
+import com.aether.android.alarm.AlarmScheduler
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.android.ui.dashboard.DashboardViewModel
@@ -22,7 +24,9 @@ class AetherViewModelFactory(
     private val scoringEngine: ScoringEngine,
     private val contextEngine: ContextEngine,
     private val apiKeyStore: ApiKeyStore,
-    private val groqScheduleClient: GroqScheduleClient
+    private val groqScheduleClient: GroqScheduleClient,
+    private val alarmPreferences: AlarmPreferences,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -35,13 +39,13 @@ class AetherViewModelFactory(
                 JournalViewModel(repository) as T
 
             GoalsViewModel::class.java ->
-                GoalsViewModel(repository, goalsRepository, apiKeyStore, groqScheduleClient) as T
+                GoalsViewModel(repository, goalsRepository, apiKeyStore, groqScheduleClient, alarmScheduler) as T
 
             GymViewModel::class.java ->
                 GymViewModel(repository) as T
 
             SettingsViewModel::class.java ->
-                SettingsViewModel(apiKeyStore) as T
+                SettingsViewModel(apiKeyStore, alarmPreferences, alarmScheduler, repository) as T
 
             ResearchViewModel::class.java ->
                 ResearchViewModel(repository) as T

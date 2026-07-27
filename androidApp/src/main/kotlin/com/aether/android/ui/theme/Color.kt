@@ -10,6 +10,11 @@ val AetherSurface2 = Color(0xFF262233)
 // Text on the dark backdrop.
 val AetherTextPrimary = Color(0xFFF5F1E8)
 val AetherTextSecondary = Color(0xFFA79FC0)
+val AetherTextTertiary = Color(0xFF6E6683)
+
+// Hairline border for neutral surface cards — just enough to separate a
+// card from the near-black background without a hard drop shadow.
+val AetherBorder = Color(0xFF2C2838)
 
 // White text for content sitting on top of the saturated accent tiles below.
 val AetherOnAccent = Color(0xFFFFFFFF)

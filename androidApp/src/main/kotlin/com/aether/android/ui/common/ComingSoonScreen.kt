@@ -4,17 +4,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AetherScaffold
-import com.aether.android.ui.theme.AetherTextSecondary
+import com.aether.android.ui.components.EmptyState
 
-private val TITLES = mapOf(
-    "gate" to "GATE Prep"
+private data class ComingSoonInfo(val title: String, val emoji: String, val subtitle: String)
+
+private val INFO = mapOf(
+    "gate" to ComingSoonInfo(
+        title = "GATE Prep",
+        emoji = "📘",
+        subtitle = "Subject-wise syllabus tracking, PYQ practice logs and mock-test trends are planned here next."
+    )
 )
 
 @Composable
@@ -22,9 +26,9 @@ fun ComingSoonScreen(
     slug: String,
     onNavigate: (String) -> Unit
 ) {
-    val title = TITLES[slug] ?: "Coming Soon"
+    val info = INFO[slug] ?: ComingSoonInfo("Coming Soon", "🚧", "This module isn't built yet.")
 
-    AetherScaffold(title = title, currentRoute = "coming_soon/$slug", onNavigate = onNavigate) {
+    AetherScaffold(title = info.title, currentRoute = "coming_soon/$slug", onNavigate = onNavigate) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -32,11 +36,7 @@ fun ComingSoonScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                "$title isn't built yet.",
-                style = MaterialTheme.typography.titleMedium,
-                color = AetherTextSecondary
-            )
+            EmptyState(emoji = info.emoji, title = "${info.title} isn't built yet", subtitle = info.subtitle)
         }
     }
 }

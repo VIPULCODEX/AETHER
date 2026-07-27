@@ -4,6 +4,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.aether.core.db.AetherDatabase
+import com.aether.core.model.BodyLog
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.JournalEntry
 import com.aether.core.model.ResearchNote
@@ -26,12 +27,13 @@ class AetherRepository(private val database: AetherDatabase) {
             .mapToList(Dispatchers.Default)
             .map { rows -> rows.map { it.toDomain() } }
 
-    suspend fun addJournalEntry(content: String, mood: Int?) {
+    suspend fun addJournalEntry(content: String, mood: Int?, attachmentUri: String? = null) {
         database.aetherQueries.insertJournalEntry(
             id = generateId(),
             createdAt = currentTimeMillis(),
             content = content,
-            mood = mood?.toLong()
+            mood = mood?.toLong(),
+            attachmentUri = attachmentUri
         )
     }
 
@@ -116,17 +118,38 @@ class AetherRepository(private val database: AetherDatabase) {
             .mapToList(Dispatchers.Default)
             .map { rows -> rows.map { it.toDomain() } }
 
-    suspend fun addResearchNote(title: String, note: String, status: String) {
+    suspend fun addResearchNote(title: String, note: String, status: String, attachmentUri: String? = null) {
         database.aetherQueries.insertResearchNote(
             id = generateId(),
             title = title,
             note = note,
             status = status,
-            createdAt = currentTimeMillis()
+            createdAt = currentTimeMillis(),
+            attachmentUri = attachmentUri
         )
     }
 
     suspend fun deleteResearchNote(id: String) {
         database.aetherQueries.deleteResearchNote(id)
+    }
+
+    fun observeBodyLogs(): Flow<List<BodyLog>> =
+        database.aetherQueries.selectAllBodyLogs()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> rows.map { it.toDomain() } }
+
+    suspend fun addBodyLog(weightKg: Double?, photoUri: String?, note: String?) {
+        database.aetherQueries.insertBodyLog(
+            id = generateId(),
+            createdAt = currentTimeMillis(),
+            weightKg = weightKg,
+            photoUri = photoUri,
+            note = note?.takeIf { it.isNotBlank() }
+        )
+    }
+
+    suspend fun deleteBodyLog(id: String) {
+        database.aetherQueries.deleteBodyLog(id)
     }
 }

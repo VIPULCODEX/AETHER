@@ -12,8 +12,8 @@ android {
         applicationId = "com.aether.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.5.1"
+        versionCode = 10
+        versionName = "0.6.0"
     }
 
     buildFeatures {
@@ -43,4 +43,5 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose)
 }

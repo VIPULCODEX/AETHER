@@ -1,0 +1,15 @@
+-- Migration from schema v2 to v3: attachments (photo/PDF, chosen via the
+-- system file picker and referenced by a persisted-permission URI, never
+-- copied into app storage) on JournalEntry/ResearchNote, plus the new
+-- BodyLog table backing Gym's weight/photo progress timeline.
+
+ALTER TABLE JournalEntry ADD COLUMN attachmentUri TEXT;
+ALTER TABLE ResearchNote ADD COLUMN attachmentUri TEXT;
+
+CREATE TABLE BodyLog (
+    id TEXT NOT NULL PRIMARY KEY,
+    createdAt INTEGER NOT NULL,
+    weightKg REAL,
+    photoUri TEXT,
+    note TEXT
+);

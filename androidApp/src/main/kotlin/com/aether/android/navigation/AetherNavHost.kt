@@ -10,6 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aether.android.AetherViewModelFactory
+import com.aether.android.alarm.AlarmPreferences
+import com.aether.android.alarm.AlarmScheduler
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.android.ui.common.ComingSoonScreen
@@ -47,11 +49,16 @@ fun AetherNavHost(
     scoringEngine: ScoringEngine,
     contextEngine: ContextEngine,
     apiKeyStore: ApiKeyStore,
-    groqScheduleClient: GroqScheduleClient
+    groqScheduleClient: GroqScheduleClient,
+    alarmPreferences: AlarmPreferences,
+    alarmScheduler: AlarmScheduler
 ) {
     val navController = rememberNavController()
     val factory = remember {
-        AetherViewModelFactory(repository, goalsRepository, scoringEngine, contextEngine, apiKeyStore, groqScheduleClient)
+        AetherViewModelFactory(
+            repository, goalsRepository, scoringEngine, contextEngine,
+            apiKeyStore, groqScheduleClient, alarmPreferences, alarmScheduler
+        )
     }
 
     val navigate: (String) -> Unit = { route ->

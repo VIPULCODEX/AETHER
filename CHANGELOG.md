@@ -4,6 +4,48 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-07-27
+
+### Added
+- Real wake-up alarms for the weekly timetable — off by default, opt in from
+  Settings. Rings and vibrates over the lock screen like the stock Clock
+  app (`AlarmActivity`), scheduled via exact `AlarmManager` alarms
+  (`AlarmScheduler`), delivered through a full-screen notification
+  (`AlarmReceiver`, the sanctioned pattern for launching an Activity from a
+  background broadcast on modern Android), and restored after a reboot
+  (`BootReceiver`). Settings walks through both required permissions
+  (notifications, and "Alarms & reminders" on Android 12+) instead of the
+  app silently failing to ring.
+- Attachments: Journal entries and Research notes can now attach a photo or
+  PDF via the system file picker, with persisted read permission so the
+  link survives app restarts — nothing is copied into app storage. Gym
+  gained an entirely new Progress section (`BodyLog` table): log weight
+  and/or a photo check-in and see a timeline with a weight-trend line,
+  which the module had zero support for before this (previously just a
+  static profile form).
+- Sets × reps added to every exercise in the 4-day split — previously only
+  posture cues existed with no actual training prescription.
+
+### Changed
+- Full visual hierarchy pass: introduced `AetherCard` (neutral surface tile)
+  as the default for lists and everyday content — goal rows, schedule
+  slots, journal entries, research notes, body-log rows — reserving the
+  saturated `AccentCard` gradient for a handful of true hero moments (Life
+  Score, Life Vision, Today's Mission, Nutrition plan). Using the loud
+  accent card for literally everything was the main reason the app read as
+  messy/amateur rather than hierarchical. Added matching `SectionHeader`,
+  `EmptyState`, and themed text field/button colors so forms stop looking
+  like raw Material3 defaults clashing against the dark theme.
+- Dashboard: time-of-day greeting instead of a static header, a
+  week-over-week trend line on the Life Score card (identity-over-streaks
+  framing, e.g. "More consistent than last week"), a progress bar on the
+  Life Vision card, and module rows that actually surface real state
+  (Gym's last check-in weight, Research's latest note) instead of just
+  linking out blind.
+- Goals: breadcrumb rebuilt as tappable pill chips instead of tiny inline
+  text; goal cards now show a real progress bar, not just a percentage
+  string.
+
 ## [0.5.1] - 2026-07-27
 
 ### Added

@@ -1,5 +1,6 @@
 package com.aether.core.data
 
+import com.aether.core.db.BodyLog as BodyLogRow
 import com.aether.core.db.DailyCheckIn as DailyCheckInRow
 import com.aether.core.db.Goal as GoalRow
 import com.aether.core.db.JournalEntry as JournalEntryRow
@@ -7,6 +8,7 @@ import com.aether.core.db.ResearchNote as ResearchNoteRow
 import com.aether.core.db.ScheduleSlot as ScheduleSlotRow
 import com.aether.core.db.Task as TaskRow
 import com.aether.core.db.UserProfile as UserProfileRow
+import com.aether.core.model.BodyLog
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
 import com.aether.core.model.GoalType
@@ -20,7 +22,16 @@ internal fun JournalEntryRow.toDomain() = JournalEntry(
     id = id,
     createdAt = createdAt,
     content = content,
-    mood = mood?.toInt()
+    mood = mood?.toInt(),
+    attachmentUri = attachmentUri
+)
+
+internal fun BodyLogRow.toDomain() = BodyLog(
+    id = id,
+    createdAt = createdAt,
+    weightKg = weightKg,
+    photoUri = photoUri,
+    note = note
 )
 
 internal fun GoalRow.toDomain() = Goal(
@@ -83,5 +94,6 @@ internal fun ResearchNoteRow.toDomain() = ResearchNote(
     title = title,
     note = note,
     status = status,
-    createdAt = createdAt
+    createdAt = createdAt,
+    attachmentUri = attachmentUri
 )
