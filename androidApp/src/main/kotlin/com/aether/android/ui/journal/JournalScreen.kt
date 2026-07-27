@@ -1,6 +1,5 @@
 package com.aether.android.ui.journal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.GlassCard
-import com.aether.android.ui.theme.AetherBackground
 import com.aether.android.ui.theme.AetherTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,10 +39,13 @@ fun JournalScreen(
     val entries by viewModel.entries.collectAsState()
     var draft by remember { mutableStateOf("") }
 
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AetherBackground)
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,5 +90,6 @@ fun JournalScreen(
                 }
             }
         }
+    }
     }
 }
