@@ -4,6 +4,16 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-07-27
+
+### Fixed
+- Build-breaking compile error introduced in 0.3.0: `FocusArea` has a
+  single column (`name`), so SQLDelight returns those query rows as a
+  plain `String` directly rather than a wrapper object — `rows.map { it.name }`
+  in `AetherRepository.observeFocusAreas()` tried to call `.name` on a
+  `String`, which doesn't exist. This was silently breaking both the
+  0.3.0 and 0.4.0 CI builds. Fix: return the mapped list directly.
+
 ## [0.4.0] - 2026-07-27
 
 ### Added

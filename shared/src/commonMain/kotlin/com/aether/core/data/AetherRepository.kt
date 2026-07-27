@@ -83,7 +83,6 @@ class AetherRepository(private val database: AetherDatabase) {
         database.aetherQueries.selectFocusAreas()
             .asFlow()
             .mapToList(Dispatchers.Default)
-            .map { rows -> rows.map { it.name } }
 
     suspend fun setFocusAreaEnabled(name: String, enabled: Boolean) {
         if (enabled) {
