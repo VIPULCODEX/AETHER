@@ -1,0 +1,54 @@
+CREATE TABLE JournalEntry (
+    id TEXT NOT NULL PRIMARY KEY,
+    createdAt INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    mood INTEGER
+);
+
+insertJournalEntry:
+INSERT INTO JournalEntry(id, createdAt, content, mood)
+VALUES (?, ?, ?, ?);
+
+selectAllJournalEntries:
+SELECT * FROM JournalEntry ORDER BY createdAt DESC;
+
+deleteJournalEntry:
+DELETE FROM JournalEntry WHERE id = ?;
+
+CREATE TABLE Goal (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    targetDate INTEGER,
+    createdAt INTEGER NOT NULL,
+    progress REAL NOT NULL DEFAULT 0.0,
+    isArchived INTEGER NOT NULL DEFAULT 0
+);
+
+insertGoal:
+INSERT INTO Goal(id, title, domain, targetDate, createdAt, progress, isArchived)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectActiveGoals:
+SELECT * FROM Goal WHERE isArchived = 0 ORDER BY createdAt DESC;
+
+updateGoalProgress:
+UPDATE Goal SET progress = ? WHERE id = ?;
+
+archiveGoal:
+UPDATE Goal SET isArchived = 1 WHERE id = ?;
+
+CREATE TABLE DailyCheckIn (
+    date TEXT NOT NULL PRIMARY KEY,
+    mood INTEGER,
+    energy INTEGER,
+    sleepHours REAL,
+    executedMission INTEGER NOT NULL DEFAULT 0
+);
+
+upsertDailyCheckIn:
+INSERT OR REPLACE INTO DailyCheckIn(date, mood, energy, sleepHours, executedMission)
+VALUES (?, ?, ?, ?, ?);
+
+selectRecentCheckIns:
+SELECT * FROM DailyCheckIn ORDER BY date DESC LIMIT ?;
