@@ -4,7 +4,7 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.1] - 2026-07-27
+## [0.1.2] - 2026-07-27
 
 ### Fixed
 - Critical contrast bug: Dashboard and Journal screens were missing a `Surface`
