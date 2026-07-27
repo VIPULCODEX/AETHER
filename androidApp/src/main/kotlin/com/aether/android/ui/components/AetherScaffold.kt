@@ -40,7 +40,7 @@ val AETHER_NAV_ITEMS = listOf(
     NavItem("Dashboard", "dashboard"),
     NavItem("Journal", "journal"),
     NavItem("Goals", "goals"),
-    NavItem("Gym", "coming_soon/gym"),
+    NavItem("Gym", "gym"),
     NavItem("Research OS", "coming_soon/research"),
     NavItem("GATE Prep", "coming_soon/gate")
 )

@@ -2,10 +2,13 @@ package com.aether.core.data
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.aether.core.db.AetherDatabase
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
 import com.aether.core.model.JournalEntry
+import com.aether.core.model.ScheduleSlot
+import com.aether.core.model.UserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -73,6 +76,60 @@ class AetherRepository(private val database: AetherDatabase) {
             energy = energy?.toLong(),
             sleepHours = sleepHours,
             executedMission = if (executedMission) 1L else 0L
+        )
+    }
+
+    fun observeFocusAreas(): Flow<List<String>> =
+        database.aetherQueries.selectFocusAreas()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> rows.map { it.name } }
+
+    suspend fun setFocusAreaEnabled(name: String, enabled: Boolean) {
+        if (enabled) {
+            database.aetherQueries.insertFocusArea(name)
+        } else {
+            database.aetherQueries.deleteFocusArea(name)
+        }
+    }
+
+    fun observeScheduleSlots(): Flow<List<ScheduleSlot>> =
+        database.aetherQueries.selectAllScheduleSlots()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> rows.map { it.toDomain() } }
+
+    suspend fun regenerateSchedule(slots: List<ScheduleSlot>) {
+        database.aetherQueries.deleteAllScheduleSlots()
+        slots.forEach { slot ->
+            database.aetherQueries.insertScheduleSlot(
+                id = slot.id,
+                dayOfWeek = slot.dayOfWeek.toLong(),
+                timeLabel = slot.timeLabel,
+                activityLabel = slot.activityLabel,
+                domain = slot.domain
+            )
+        }
+    }
+
+    suspend fun updateScheduleSlotLabel(id: String, newLabel: String) {
+        database.aetherQueries.updateScheduleSlotLabel(newLabel, id)
+    }
+
+    fun observeUserProfile(): Flow<UserProfile?> =
+        database.aetherQueries.selectUserProfile()
+            .asFlow()
+            .mapToOneOrNull(Dispatchers.Default)
+            .map { it?.toDomain() }
+
+    suspend fun saveUserProfile(profile: UserProfile) {
+        database.aetherQueries.upsertUserProfile(
+            heightCm = profile.heightCm,
+            weightKg = profile.weightKg,
+            age = profile.age?.toLong(),
+            isMale = profile.isMale?.let { if (it) 1L else 0L },
+            activityLevel = profile.activityLevel,
+            bodyGoal = profile.bodyGoal
         )
     }
 }

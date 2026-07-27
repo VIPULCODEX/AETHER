@@ -4,6 +4,32 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-07-27
+
+### Added
+- Goals screen now leads with a multi-select "focus area" chip row (Gym,
+  Research, GATE, JEE, College Work). Selecting areas generates a basic
+  weekly timetable (`BasicScheduleGenerator`) distributing time blocks
+  round-robin across them — every slot is tap-to-edit. This is a
+  deterministic v1; an LLM-generated version (via API call, see below)
+  is the planned upgrade path, same data shape so it's a drop-in swap.
+- Gym module (previously a placeholder): gated behind "Gym" being a
+  selected focus area. Includes a profile form (height/weight/age/sex/
+  activity level/goal), a BMR/TDEE calculator (Mifflin-St Jeor) giving
+  target calories and protein intake, and a curated 4-day split (Chest/
+  Triceps, Back/Biceps, Legs, Shoulders/Abs) with text-based posture cues
+  per exercise. No photos/videos yet — flagged as a follow-up needing
+  either bundled licensed images or a verified exercise-database API.
+
+### Decided
+- AI-generated scheduling will use an API call (Claude API) rather than
+  an on-device model — on-device models aren't reliable enough for
+  multi-constraint natural-language schedule generation, and calls are
+  infrequent enough that cost is negligible. Only goal selections and
+  the free-text schedule description will be sent; the rest of the Life
+  Data Store never leaves the device. Not yet wired up — needs an
+  Anthropic API key before the network call can be built.
+
 ## [0.2.0] - 2026-07-27
 
 ### Added
