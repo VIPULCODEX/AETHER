@@ -15,6 +15,10 @@ SELECT * FROM JournalEntry ORDER BY createdAt DESC;
 deleteJournalEntry:
 DELETE FROM JournalEntry WHERE id = ?;
 
+-- goalType is the hierarchy LEVEL (Life Vision -> Long Term -> Domain -> Quarterly
+-- -> Monthly -> Weekly); the existing `domain` column stays the category label
+-- (Academic/Career/Health/Financial/Personal/Research/Gym/GATE/...) — the two are
+-- orthogonal, so this reuses `domain` rather than folding both into one enum.
 CREATE TABLE Goal (
     id TEXT NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
@@ -22,21 +26,83 @@ CREATE TABLE Goal (
     targetDate INTEGER,
     createdAt INTEGER NOT NULL,
     progress REAL NOT NULL DEFAULT 0.0,
-    isArchived INTEGER NOT NULL DEFAULT 0
+    isArchived INTEGER NOT NULL DEFAULT 0,
+    goalType TEXT NOT NULL DEFAULT 'WEEKLY',
+    parentGoalId TEXT REFERENCES Goal(id),
+    priority INTEGER,
+    estimatedEffort INTEGER,
+    estimatedImpact INTEGER,
+    aiImportanceScore REAL
 );
 
+CREATE INDEX idx_goal_parent ON Goal(parentGoalId);
+CREATE INDEX idx_goal_type ON Goal(goalType);
+
 insertGoal:
-INSERT INTO Goal(id, title, domain, targetDate, createdAt, progress, isArchived)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Goal(
+    id, title, domain, targetDate, createdAt, progress, isArchived,
+    goalType, parentGoalId, priority, estimatedEffort, estimatedImpact, aiImportanceScore
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectActiveGoals:
 SELECT * FROM Goal WHERE isArchived = 0 ORDER BY createdAt DESC;
+
+selectRootGoals:
+SELECT * FROM Goal WHERE isArchived = 0 AND parentGoalId IS NULL ORDER BY createdAt DESC;
+
+selectChildGoals:
+SELECT * FROM Goal WHERE isArchived = 0 AND parentGoalId = ? ORDER BY createdAt DESC;
+
+selectGoalsByType:
+SELECT * FROM Goal WHERE isArchived = 0 AND goalType = ? ORDER BY createdAt DESC;
+
+selectGoalById:
+SELECT * FROM Goal WHERE id = ?;
 
 updateGoalProgress:
 UPDATE Goal SET progress = ? WHERE id = ?;
 
 archiveGoal:
 UPDATE Goal SET isArchived = 1 WHERE id = ?;
+
+CREATE TABLE Task (
+    id TEXT NOT NULL PRIMARY KEY,
+    goalId TEXT NOT NULL REFERENCES Goal(id),
+    title TEXT NOT NULL,
+    dueDate INTEGER,
+    priority INTEGER,
+    estimatedEffort INTEGER,
+    estimatedImpact INTEGER,
+    aiImportanceScore REAL,
+    isDone INTEGER NOT NULL DEFAULT 0,
+    completedAt INTEGER,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX idx_task_goal ON Task(goalId);
+
+insertTask:
+INSERT INTO Task(
+    id, goalId, title, dueDate, priority, estimatedEffort, estimatedImpact,
+    aiImportanceScore, isDone, completedAt, createdAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectTasksForGoal:
+SELECT * FROM Task WHERE goalId = ? ORDER BY isDone, dueDate IS NULL, dueDate, createdAt DESC;
+
+selectAllTasks:
+SELECT * FROM Task;
+
+selectOpenTasks:
+SELECT * FROM Task WHERE isDone = 0 ORDER BY dueDate IS NULL, dueDate, createdAt DESC;
+
+setTaskDone:
+UPDATE Task SET isDone = ?, completedAt = ? WHERE id = ?;
+
+deleteTask:
+DELETE FROM Task WHERE id = ?;
 
 CREATE TABLE DailyCheckIn (
     date TEXT NOT NULL PRIMARY KEY,

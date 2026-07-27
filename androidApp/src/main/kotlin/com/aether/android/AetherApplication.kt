@@ -5,6 +5,7 @@ import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.DatabaseDriverFactory
+import com.aether.core.data.GoalsRepository
 import com.aether.core.db.AetherDatabase
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.ScoringEngine
@@ -12,6 +13,9 @@ import com.aether.core.engine.ScoringEngine
 class AetherApplication : Application() {
 
     lateinit var repository: AetherRepository
+        private set
+
+    lateinit var goalsRepository: GoalsRepository
         private set
 
     lateinit var apiKeyStore: ApiKeyStore
@@ -23,8 +27,9 @@ class AetherApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val driver = DatabaseDriverFactory(this).createDriver()
-        repository = AetherRepository(AetherDatabase(driver))
+        val database = AetherDatabase(DatabaseDriverFactory(this).createDriver())
+        repository = AetherRepository(database)
+        goalsRepository = GoalsRepository(database)
         apiKeyStore = ApiKeyStore(this)
     }
 }

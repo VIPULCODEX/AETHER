@@ -4,6 +4,35 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-07-27
+
+### Added
+- Hierarchical Goal System (Milestone 1 of the AI-first Higher Study OS
+  roadmap): Goals now form a tree — Life Vision → Long Term → Domain →
+  Quarterly → Monthly → Weekly — via a new `goalType` + self-referencing
+  `parentGoalId` on `Goal`. Goals screen replaced its flat list with a
+  breadcrumb-navigable tree view (still built entirely from the existing
+  `AccentCard`/`FilterChip` primitives, no new visual style introduced).
+- Task table ("Today's Actions"): each Task belongs to a Goal, so every
+  action always knows which goal — and by walking `parentGoalId` up the
+  tree, which Life Vision — it serves. Manage them from the Goals screen
+  under whichever goal is selected.
+- Dashboard gained a "Life Vision" card next to the existing Life Score
+  card, showing roll-up progress toward the nearest Life Vision goal (e.g.
+  "43% closer to: Become a Research Scientist") — computed by
+  `ScoringEngine.computeGoalTreeProgress`, which averages child-goal
+  progress recursively down to task completion ratios. No black-box
+  numbers, same principle the rest of the engine already follows.
+- SQLDelight schema migrations (`1.sqm`) introduced for the first time —
+  existing installs upgrade in place (pre-existing goals become root-level
+  Weekly goals) instead of the schema being hand-edited going forward.
+
+### Changed
+- Split `AetherRepository` into `AetherRepository` (Journal/CheckIns/Focus
+  Areas/Schedule/Profile/Research) and a new `GoalsRepository` (Goals +
+  Tasks), since the hierarchy work was the point past which one repository
+  class stops being manageable.
+
 ## [0.5.0] - 2026-07-27
 
 ### Fixed

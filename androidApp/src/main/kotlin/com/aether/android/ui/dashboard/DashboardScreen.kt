@@ -71,6 +71,24 @@ fun DashboardScreen(
                 }
             }
 
+            state.lifeVisionProgress?.let { progress ->
+                item {
+                    AccentCard(
+                        accentColor = AetherIndigo,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onNavigate("goals") }
+                    ) {
+                        Text("Life Vision", style = MaterialTheme.typography.labelSmall, color = AetherOnAccent.copy(alpha = 0.7f))
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "${progress.progressPercent}% closer to: ${progress.title}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AetherOnAccent
+                        )
+                    }
+                }
+            }
+
             state.suggestion?.let { suggestion ->
                 item {
                     val missionColor = if (state.missionDoneToday) AetherEmerald else AetherCoral

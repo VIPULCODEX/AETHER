@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
             AetherTheme {
                 AetherNavHost(
                     repository = app.repository,
+                    goalsRepository = app.goalsRepository,
                     scoringEngine = app.scoringEngine,
                     contextEngine = app.contextEngine,
                     apiKeyStore = app.apiKeyStore,

@@ -5,12 +5,15 @@ import com.aether.core.db.Goal as GoalRow
 import com.aether.core.db.JournalEntry as JournalEntryRow
 import com.aether.core.db.ResearchNote as ResearchNoteRow
 import com.aether.core.db.ScheduleSlot as ScheduleSlotRow
+import com.aether.core.db.Task as TaskRow
 import com.aether.core.db.UserProfile as UserProfileRow
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
+import com.aether.core.model.GoalType
 import com.aether.core.model.JournalEntry
 import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
+import com.aether.core.model.Task
 import com.aether.core.model.UserProfile
 
 internal fun JournalEntryRow.toDomain() = JournalEntry(
@@ -27,7 +30,27 @@ internal fun GoalRow.toDomain() = Goal(
     targetDate = targetDate,
     createdAt = createdAt,
     progress = progress,
-    isArchived = isArchived == 1L
+    isArchived = isArchived == 1L,
+    goalType = runCatching { GoalType.valueOf(goalType) }.getOrDefault(GoalType.WEEKLY),
+    parentGoalId = parentGoalId,
+    priority = priority?.toInt(),
+    estimatedEffort = estimatedEffort?.toInt(),
+    estimatedImpact = estimatedImpact?.toInt(),
+    aiImportanceScore = aiImportanceScore
+)
+
+internal fun TaskRow.toDomain() = Task(
+    id = id,
+    goalId = goalId,
+    title = title,
+    dueDate = dueDate,
+    priority = priority?.toInt(),
+    estimatedEffort = estimatedEffort?.toInt(),
+    estimatedImpact = estimatedImpact?.toInt(),
+    aiImportanceScore = aiImportanceScore,
+    isDone = isDone == 1L,
+    completedAt = completedAt,
+    createdAt = createdAt
 )
 
 internal fun DailyCheckInRow.toDomain() = DailyCheckIn(
