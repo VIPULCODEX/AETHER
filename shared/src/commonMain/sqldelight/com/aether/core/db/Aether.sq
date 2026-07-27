@@ -2,12 +2,13 @@ CREATE TABLE JournalEntry (
     id TEXT NOT NULL PRIMARY KEY,
     createdAt INTEGER NOT NULL,
     content TEXT NOT NULL,
-    mood INTEGER
+    mood INTEGER,
+    attachmentUri TEXT
 );
 
 insertJournalEntry:
-INSERT INTO JournalEntry(id, createdAt, content, mood)
-VALUES (?, ?, ?, ?);
+INSERT INTO JournalEntry(id, createdAt, content, mood, attachmentUri)
+VALUES (?, ?, ?, ?, ?);
 
 selectAllJournalEntries:
 SELECT * FROM JournalEntry ORDER BY createdAt DESC;
@@ -175,15 +176,38 @@ CREATE TABLE ResearchNote (
     title TEXT NOT NULL,
     note TEXT NOT NULL,
     status TEXT NOT NULL,
-    createdAt INTEGER NOT NULL
+    createdAt INTEGER NOT NULL,
+    attachmentUri TEXT
 );
 
 insertResearchNote:
-INSERT INTO ResearchNote(id, title, note, status, createdAt)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO ResearchNote(id, title, note, status, createdAt, attachmentUri)
+VALUES (?, ?, ?, ?, ?, ?);
 
 selectAllResearchNotes:
 SELECT * FROM ResearchNote ORDER BY createdAt DESC;
 
 deleteResearchNote:
 DELETE FROM ResearchNote WHERE id = ?;
+
+-- A body-weight + optional progress-photo check-in, the "Strong/Hevy-style"
+-- progress timeline that Gym was missing entirely (it only had a static
+-- profile form before this). photoUri is a persisted-permission SAF URI,
+-- not a copied file — see AttachmentPicker on the Android side.
+CREATE TABLE BodyLog (
+    id TEXT NOT NULL PRIMARY KEY,
+    createdAt INTEGER NOT NULL,
+    weightKg REAL,
+    photoUri TEXT,
+    note TEXT
+);
+
+insertBodyLog:
+INSERT INTO BodyLog(id, createdAt, weightKg, photoUri, note)
+VALUES (?, ?, ?, ?, ?);
+
+selectAllBodyLogs:
+SELECT * FROM BodyLog ORDER BY createdAt DESC;
+
+deleteBodyLog:
+DELETE FROM BodyLog WHERE id = ?;

@@ -2,6 +2,7 @@ package com.aether.android.ui.goals
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aether.android.alarm.AlarmScheduler
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.core.data.AetherRepository
@@ -53,7 +54,8 @@ class GoalsViewModel(
     private val repository: AetherRepository,
     private val goalsRepository: GoalsRepository,
     private val apiKeyStore: ApiKeyStore,
-    private val groqClient: GroqScheduleClient
+    private val groqClient: GroqScheduleClient,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private val scheduleGenerator = BasicScheduleGenerator()
@@ -152,6 +154,7 @@ class GoalsViewModel(
         viewModelScope.launch {
             val slots = scheduleGenerator.generate(_uiState.value.focusAreas)
             repository.regenerateSchedule(slots)
+            alarmScheduler.rescheduleAll(slots)
         }
     }
 
@@ -172,6 +175,7 @@ class GoalsViewModel(
                     groqClient.generateSchedule(apiKey, focusAreas, description)
                 }
                 repository.regenerateSchedule(slots)
+                alarmScheduler.rescheduleAll(slots)
                 _uiState.value = _uiState.value.copy(isGeneratingWithAi = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -186,6 +190,8 @@ class GoalsViewModel(
         if (newLabel.isBlank()) return
         viewModelScope.launch {
             repository.updateScheduleSlotLabel(id, newLabel.trim())
+            val slots = _uiState.value.scheduleSlots.map { if (it.id == id) it.copy(activityLabel = newLabel.trim()) else it }
+            alarmScheduler.rescheduleAll(slots)
         }
     }
 

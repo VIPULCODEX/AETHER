@@ -1,6 +1,8 @@
 package com.aether.android
 
 import android.app.Application
+import com.aether.android.alarm.AlarmPreferences
+import com.aether.android.alarm.AlarmScheduler
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.core.data.AetherRepository
@@ -21,6 +23,12 @@ class AetherApplication : Application() {
     lateinit var apiKeyStore: ApiKeyStore
         private set
 
+    lateinit var alarmPreferences: AlarmPreferences
+        private set
+
+    lateinit var alarmScheduler: AlarmScheduler
+        private set
+
     val scoringEngine = ScoringEngine()
     val contextEngine = ContextEngine()
     val groqScheduleClient = GroqScheduleClient()
@@ -31,5 +39,7 @@ class AetherApplication : Application() {
         repository = AetherRepository(database)
         goalsRepository = GoalsRepository(database)
         apiKeyStore = ApiKeyStore(this)
+        alarmPreferences = AlarmPreferences(this)
+        alarmScheduler = AlarmScheduler(this)
     }
 }

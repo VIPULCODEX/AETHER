@@ -22,7 +22,9 @@ class MainActivity : ComponentActivity() {
                     scoringEngine = app.scoringEngine,
                     contextEngine = app.contextEngine,
                     apiKeyStore = app.apiKeyStore,
-                    groqScheduleClient = app.groqScheduleClient
+                    groqScheduleClient = app.groqScheduleClient,
+                    alarmPreferences = app.alarmPreferences,
+                    alarmScheduler = app.alarmScheduler
                 )
             }
         }

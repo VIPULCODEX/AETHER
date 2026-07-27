@@ -5,5 +5,6 @@ data class ResearchNote(
     val title: String,
     val note: String,
     val status: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val attachmentUri: String?
 )
