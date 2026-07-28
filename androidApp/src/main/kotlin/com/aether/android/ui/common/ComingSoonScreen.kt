@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.components.EmptyState
 
@@ -32,7 +33,8 @@ fun ComingSoonScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(horizontal = 32.dp)
+                .padding(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

@@ -2,6 +2,7 @@ package com.aether.android.ui.gym
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aether.android.ui.components.AccentCard
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherButton
 import com.aether.android.ui.components.AetherCard
 import com.aether.android.ui.components.AetherOutlinedButton
@@ -63,7 +65,8 @@ fun GymScreen(
     AetherScaffold(title = "Gym", currentRoute = "gym", onNavigate = onNavigate) {
         if (!state.gymIsFocusArea) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
@@ -94,6 +97,7 @@ fun GymScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { SectionHeader("Your profile", "Used only to calculate your targets below.") }

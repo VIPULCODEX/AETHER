@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherButton
 import com.aether.android.ui.components.AetherCard
 import com.aether.android.ui.components.AetherOutlinedButton
@@ -67,6 +69,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { SectionHeader("Wake-up alarms", "Off by default. Rings and vibrates at each timetable slot, like the Clock app.") }

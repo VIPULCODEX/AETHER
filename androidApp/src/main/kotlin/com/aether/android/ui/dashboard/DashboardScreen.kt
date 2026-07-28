@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AccentCard
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherCard
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.theme.AetherCoral
@@ -54,7 +55,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {

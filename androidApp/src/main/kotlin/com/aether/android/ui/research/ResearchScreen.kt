@@ -2,6 +2,7 @@ package com.aether.android.ui.research
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherButton
 import com.aether.android.ui.components.AetherCard
 import com.aether.android.ui.components.AetherOutlinedButton
@@ -52,7 +54,8 @@ fun ResearchScreen(
     AetherScaffold(title = "Research", currentRoute = "research", onNavigate = onNavigate) {
         if (!state.researchIsFocusArea) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
@@ -79,6 +82,7 @@ fun ResearchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
