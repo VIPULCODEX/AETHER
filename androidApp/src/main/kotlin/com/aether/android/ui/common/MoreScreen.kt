@@ -1,6 +1,7 @@
 package com.aether.android.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AccentCard
+import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.theme.AetherOnAccent
 import com.aether.android.ui.theme.AetherSky
@@ -25,6 +27,7 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {

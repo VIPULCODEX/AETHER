@@ -4,6 +4,31 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-07-28
+
+### Changed
+- Navigation chrome rebuilt around a real liquid-glass effect
+  ([Kyant0/AndroidLiquidGlass](https://github.com/Kyant0/AndroidLiquidGlass)):
+  the bottom tab bar and top title bar are now floating, translucent panels
+  that live-sample, blur, and refract whatever content is actually scrolling
+  underneath them via a shared `LayerBackdrop` — not a tinted rectangle drawn
+  over an opaque `Scaffold` bar, which is what every earlier version had.
+  Required moving off Material3 `Scaffold`'s `topBar`/`bottomBar` slots (they
+  reserve their own space and never let content render behind them) to an
+  edge-to-edge `Box` where every screen's own `LazyColumn` now carries
+  top/bottom `contentPadding` (`AetherBars.TopContentPadding` /
+  `BottomContentPadding`) instead of relying on Scaffold-computed insets.
+  The bottom bar keeps a capsule "pill" indicator that spring-animates to the
+  selected tab and gets its own nested glass/refraction pass.
+- Bottom tab icons replaced: the five emoji (🏠🎯💪📔⋯) are gone, swapped for
+  proper outlined/filled Material icons (`material-icons-extended`) that
+  swap weight on selection — emoji rendering is inconsistent across devices
+  and read as a placeholder rather than a deliberate icon set, especially
+  now that they'd be sitting on a glass surface instead of a flat one.
+- On API < 31 (no `RenderEffect`) the library degrades gracefully — bars stay
+  translucent and tinted but without live blur/refraction — rather than
+  crashing or needing a separate code path.
+
 ## [0.6.0] - 2026-07-27
 
 ### Added
