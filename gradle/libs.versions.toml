@@ -9,7 +9,7 @@ activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 navigationCompose = "2.8.5"
 coil = "2.7.0"
-backdrop = "2.0.0"
+backdrop = "1.0.4"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
