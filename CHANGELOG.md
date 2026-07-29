@@ -4,6 +4,15 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.3] - 2026-07-29
+
+### Changed
+- Bottom nav's glass pill is now draggable: press and hold anywhere on the
+  bar and it follows your finger live across tabs instead of only jumping
+  between them on tap. Releasing commits navigation to whichever tab it
+  lands on; a plain tap still works the same as before since it's just a
+  zero-distance drag.
+
 ## [0.7.2] - 2026-07-29
 
 ### Fixed
