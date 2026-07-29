@@ -4,6 +4,13 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.4] - 2026-07-29
+
+### Changed
+- Nav pill lifts (scales up slightly, rises off the bar) the instant it's
+  grabbed, then eases back down smoothly on release, instead of staying
+  flat the whole time it's being dragged.
+
 ## [0.7.3] - 2026-07-29
 
 ### Changed
