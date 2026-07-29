@@ -222,10 +222,13 @@ private fun GlassBottomNavBar(
         }.coerceAtLeast(0)
     }
 
-    // Non-null only while a finger is down on the bar: tracks whichever tab
-    // is currently under the touch so the pill can follow the drag live,
-    // rather than only animating between taps.
+    // Non-null only while a finger is down on the bar. dragIndex is the
+    // nearest tab (drives icon tint + which tab a release commits to);
+    // dragOffsetPx is the pill's *continuous* raw finger-relative position,
+    // so it glides pixel-by-pixel under the touch instead of hopping
+    // between quantized per-tab stops while being dragged.
     var dragIndex by remember { mutableStateOf<Int?>(null) }
+    var dragOffsetPx by remember { mutableStateOf<Float?>(null) }
     val displayedIndex = dragIndex ?: selectedIndex
     val density = LocalDensity.current
 
@@ -238,11 +241,12 @@ private fun GlassBottomNavBar(
         val tabWidth = maxWidth / BOTTOM_NAV_ITEMS.size
         val tabWidthPx = with(density) { tabWidth.toPx() }
         val isHeld = dragIndex != null
+        val settledTargetPx = tabWidthPx * displayedIndex
         val indicatorOffset by animateDpAsState(
-            targetValue = tabWidth * displayedIndex,
-            // Follow the finger instantly while dragging; only ease into
-            // place for a tap-triggered (finger-up) tab change.
-            animationSpec = if (isHeld) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
+            targetValue = with(density) { (dragOffsetPx ?: settledTargetPx).toDp() },
+            // Follow the finger instantly, pixel-for-pixel, while dragging;
+            // only ease into place for a tap/release-triggered tab change.
+            animationSpec = if (dragOffsetPx != null) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
             label = "navIndicator"
         )
         // Pill lifts off the bar the instant it's grabbed (quick spring pop),
@@ -283,19 +287,28 @@ private fun GlassBottomNavBar(
                     onDrawSurface = { drawRect(AetherSurface1.copy(alpha = 0.45f)) }
                 )
                 .pointerInput(tabWidthPx) {
+                    val maxOffsetPx = tabWidthPx * (BOTTOM_NAV_ITEMS.size - 1)
+                    fun trackTouch(x: Float) {
+                        // Pill's left edge follows the finger directly (finger
+                        // roughly centered over the pill), clamped so it never
+                        // slides past the first/last tab.
+                        dragOffsetPx = (x - tabWidthPx / 2f).coerceIn(0f, maxOffsetPx)
+                        dragIndex = (x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                    }
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val pointerId = down.id
-                        dragIndex = (down.position.x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                        trackTouch(down.position.x)
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull { it.id == pointerId } ?: break
                             if (!change.pressed) break
                             change.consume()
-                            dragIndex = (change.position.x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                            trackTouch(change.position.x)
                         }
                         dragIndex?.let { index -> onNavigate(BOTTOM_NAV_ITEMS[index].route) }
                         dragIndex = null
+                        dragOffsetPx = null
                     }
                 }
         ) {
