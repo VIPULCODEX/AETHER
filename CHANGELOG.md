@@ -4,6 +4,23 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] - 2026-07-29
+
+### Fixed
+- Top glass bar no longer overlaps content on devices with a taller status
+  bar/notch or larger font scale: content top padding was a fixed 96.dp
+  guess that could be shorter than the bar's real rendered height. It's now
+  measured live (`onSizeChanged`) and threaded down through a
+  `CompositionLocal`, so `AetherBars.TopContentPadding` always matches the
+  actual bar.
+- Bottom nav's selected-tab indicator now glides smoothly between tabs
+  (420ms `FastOutSlowInEasing` tween) instead of popping with a slight
+  spring overshoot.
+- CI: pinned `backdrop` to a Kotlin/Compose-compatible version, bumped
+  Kotlin to 2.3.21 and the Compose BOM to 2026.06.01 to match, migrated
+  off the now-hard-error `kotlinOptions { jvmTarget }` DSL, and fixed a
+  missing `getValue` import that only surfaced once the above were fixed.
+
 ## [0.7.0] - 2026-07-28
 
 ### Changed
