@@ -249,9 +249,11 @@ private fun GlassBottomNavBar(
             animationSpec = if (dragOffsetPx != null) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
             label = "navIndicator"
         )
-        // Pill lifts off the bar the instant it's grabbed (quick spring pop),
-        // then settles back down smoothly once released -- rather than only
-        // sliding flat the whole time.
+        // Pill pops slightly larger the instant it's grabbed (quick spring),
+        // then eases back to its resting size on release. Scales about its
+        // own center (graphicsLayer's default transform origin) rather than
+        // translating vertically, so it stays hovering centered in the bar
+        // instead of growing into its top/bottom edge.
         val liftSpec: AnimationSpec<Float> = if (isHeld) {
             spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
         } else {
@@ -261,15 +263,6 @@ private fun GlassBottomNavBar(
             targetValue = if (isHeld) 1.1f else 1f,
             animationSpec = liftSpec,
             label = "navPillLiftScale"
-        )
-        val liftOffsetY by animateDpAsState(
-            targetValue = if (isHeld) (-8).dp else 0.dp,
-            animationSpec = if (isHeld) {
-                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-            } else {
-                tween(durationMillis = 320, easing = FastOutSlowInEasing)
-            },
-            label = "navPillLiftOffset"
         )
 
         Box(
@@ -315,7 +308,7 @@ private fun GlassBottomNavBar(
             Box(
                 Modifier
                     .padding(6.dp)
-                    .offset(x = indicatorOffset, y = liftOffsetY)
+                    .offset(x = indicatorOffset)
                     .graphicsLayer {
                         scaleX = liftScale
                         scaleY = liftScale
