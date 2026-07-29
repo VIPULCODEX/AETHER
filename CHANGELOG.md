@@ -4,6 +4,19 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.2] - 2026-07-29
+
+### Fixed
+- Bottom nav's selected-tab indicator now actually slides between tabs.
+  Every screen instantiated its own glass scaffold (backdrop + bottom bar)
+  inside its own NavHost destination, so switching tabs tore down and
+  rebuilt the bar's remembered animation state before it could animate —
+  the pill just appeared already at its target position. Split the chrome
+  into `AetherAppChrome` (owns the shared backdrop and the single
+  persistent bottom nav bar, wraps the NavHost once) and a slimmer
+  per-screen `AetherScaffold` (just the title bar + content), so the
+  indicator's state — and its slide — now survives navigation.
+
 ## [0.7.1] - 2026-07-29
 
 ### Fixed
