@@ -2,9 +2,11 @@ package com.aether.android.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -214,6 +217,13 @@ private fun GlassBottomNavBar(
         }.coerceAtLeast(0)
     }
 
+    // Non-null only while a finger is down on the bar: tracks whichever tab
+    // is currently under the touch so the pill can follow the drag live,
+    // rather than only animating between taps.
+    var dragIndex by remember { mutableStateOf<Int?>(null) }
+    val displayedIndex = dragIndex ?: selectedIndex
+    val density = LocalDensity.current
+
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
@@ -221,9 +231,12 @@ private fun GlassBottomNavBar(
             .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         val tabWidth = maxWidth / BOTTOM_NAV_ITEMS.size
+        val tabWidthPx = with(density) { tabWidth.toPx() }
         val indicatorOffset by animateDpAsState(
-            targetValue = tabWidth * selectedIndex,
-            animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+            targetValue = tabWidth * displayedIndex,
+            // Follow the finger instantly while dragging; only ease into
+            // place for a tap-triggered (finger-up) tab change.
+            animationSpec = if (dragIndex != null) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
             label = "navIndicator"
         )
 
@@ -241,6 +254,22 @@ private fun GlassBottomNavBar(
                     },
                     onDrawSurface = { drawRect(AetherSurface1.copy(alpha = 0.45f)) }
                 )
+                .pointerInput(tabWidthPx) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val pointerId = down.id
+                        dragIndex = (down.position.x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                            if (!change.pressed) break
+                            change.consume()
+                            dragIndex = (change.position.x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                        }
+                        dragIndex?.let { index -> onNavigate(BOTTOM_NAV_ITEMS[index].route) }
+                        dragIndex = null
+                    }
+                }
         ) {
             Box(
                 Modifier
@@ -259,12 +288,11 @@ private fun GlassBottomNavBar(
 
             Row(Modifier.fillMaxSize()) {
                 BOTTOM_NAV_ITEMS.forEachIndexed { index, item ->
-                    val selected = index == selectedIndex
+                    val selected = index == displayedIndex
                     Box(
                         Modifier
                             .weight(1f)
-                            .fillMaxSize()
-                            .clickable { onNavigate(item.route) },
+                            .fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         val tint = if (selected) AetherSky else AetherTextSecondary
