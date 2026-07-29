@@ -54,6 +54,7 @@ import com.aether.android.ui.theme.AetherSurface1
 import com.aether.android.ui.theme.AetherTextPrimary
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -79,7 +80,7 @@ val BOTTOM_NAV_ITEMS = listOf(
 private val MORE_ROUTES = setOf("more", "research", "settings", "coming_soon/gate")
 
 private val LocalTopBarHeight = compositionLocalOf { 96.dp }
-private val LocalBackdrop = compositionLocalOf<Backdrop?> { null }
+private val LocalBackdrop = compositionLocalOf<LayerBackdrop?> { null }
 
 /**
  * Space every screen's own scrollable content should reserve at the top/bottom
