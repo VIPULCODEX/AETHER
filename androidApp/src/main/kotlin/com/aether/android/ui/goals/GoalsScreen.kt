@@ -72,7 +72,7 @@ fun GoalsScreen(
     var editText by remember { mutableStateOf("") }
     var aiDescription by remember { mutableStateOf("") }
 
-    AetherScaffoldGoals(onNavigate = onNavigate) {
+    AetherScaffoldGoals {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -359,8 +359,8 @@ fun GoalsScreen(
 }
 
 @Composable
-private fun AetherScaffoldGoals(onNavigate: (String) -> Unit, content: @Composable () -> Unit) {
-    com.aether.android.ui.components.AetherScaffold(title = "Goals", currentRoute = "goals", onNavigate = onNavigate, content = content)
+private fun AetherScaffoldGoals(content: @Composable () -> Unit) {
+    com.aether.android.ui.components.AetherScaffold(title = "Goals", content = content)
 }
 
 @Composable

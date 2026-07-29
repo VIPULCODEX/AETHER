@@ -22,7 +22,7 @@ import com.aether.android.ui.theme.AetherSlate
 
 @Composable
 fun MoreScreen(onNavigate: (String) -> Unit) {
-    AetherScaffold(title = "More", currentRoute = "more", onNavigate = onNavigate) {
+    AetherScaffold(title = "More") {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

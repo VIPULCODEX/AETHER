@@ -51,7 +51,7 @@ fun ResearchScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    AetherScaffold(title = "Research", currentRoute = "research", onNavigate = onNavigate) {
+    AetherScaffold(title = "Research") {
         if (!state.researchIsFocusArea) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),

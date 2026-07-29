@@ -64,7 +64,7 @@ fun SettingsScreen(
         ActivityResultContracts.RequestPermission()
     ) { /* Result observed indirectly via canScheduleExactAlarms()/system state on next recomposition. */ }
 
-    AetherScaffold(title = "Settings", currentRoute = "settings", onNavigate = onNavigate) {
+    AetherScaffold(title = "Settings") {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
