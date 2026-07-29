@@ -1,8 +1,12 @@
 package com.aether.android.ui.components
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -45,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -232,12 +237,35 @@ private fun GlassBottomNavBar(
     ) {
         val tabWidth = maxWidth / BOTTOM_NAV_ITEMS.size
         val tabWidthPx = with(density) { tabWidth.toPx() }
+        val isHeld = dragIndex != null
         val indicatorOffset by animateDpAsState(
             targetValue = tabWidth * displayedIndex,
             // Follow the finger instantly while dragging; only ease into
             // place for a tap-triggered (finger-up) tab change.
-            animationSpec = if (dragIndex != null) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
+            animationSpec = if (isHeld) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
             label = "navIndicator"
+        )
+        // Pill lifts off the bar the instant it's grabbed (quick spring pop),
+        // then settles back down smoothly once released -- rather than only
+        // sliding flat the whole time.
+        val liftSpec: AnimationSpec<Float> = if (isHeld) {
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+        } else {
+            tween(durationMillis = 320, easing = FastOutSlowInEasing)
+        }
+        val liftScale by animateFloatAsState(
+            targetValue = if (isHeld) 1.1f else 1f,
+            animationSpec = liftSpec,
+            label = "navPillLiftScale"
+        )
+        val liftOffsetY by animateDpAsState(
+            targetValue = if (isHeld) (-8).dp else 0.dp,
+            animationSpec = if (isHeld) {
+                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+            } else {
+                tween(durationMillis = 320, easing = FastOutSlowInEasing)
+            },
+            label = "navPillLiftOffset"
         )
 
         Box(
@@ -274,7 +302,11 @@ private fun GlassBottomNavBar(
             Box(
                 Modifier
                     .padding(6.dp)
-                    .offset(x = indicatorOffset)
+                    .offset(x = indicatorOffset, y = liftOffsetY)
+                    .graphicsLayer {
+                        scaleX = liftScale
+                        scaleY = liftScale
+                    }
                     .size(width = tabWidth - 12.dp, height = 52.dp)
                     .drawBackdrop(
                         backdrop = backdrop,
