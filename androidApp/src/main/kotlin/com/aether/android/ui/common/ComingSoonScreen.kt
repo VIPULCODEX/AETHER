@@ -29,7 +29,7 @@ fun ComingSoonScreen(
 ) {
     val info = INFO[slug] ?: ComingSoonInfo("Coming Soon", "🚧", "This module isn't built yet.")
 
-    AetherScaffold(title = info.title, currentRoute = "coming_soon/$slug", onNavigate = onNavigate) {
+    AetherScaffold(title = info.title) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

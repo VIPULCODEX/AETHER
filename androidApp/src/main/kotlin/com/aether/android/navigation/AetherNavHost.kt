@@ -1,12 +1,14 @@
 package com.aether.android.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aether.android.AetherViewModelFactory
@@ -15,6 +17,7 @@ import com.aether.android.alarm.AlarmScheduler
 import com.aether.android.data.ApiKeyStore
 import com.aether.android.data.GroqScheduleClient
 import com.aether.android.ui.common.ComingSoonScreen
+import com.aether.android.ui.components.AetherAppChrome
 import com.aether.android.ui.common.MoreScreen
 import com.aether.android.ui.dashboard.DashboardScreen
 import com.aether.android.ui.dashboard.DashboardViewModel
@@ -69,7 +72,14 @@ fun AetherNavHost(
         }
     }
 
-    NavHost(navController = navController, startDestination = ROUTE_DASHBOARD) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = when (backStackEntry?.destination?.route) {
+        ROUTE_COMING_SOON -> "coming_soon/${backStackEntry?.arguments?.getString("slug").orEmpty()}"
+        else -> backStackEntry?.destination?.route ?: ROUTE_DASHBOARD
+    }
+
+    AetherAppChrome(currentRoute = currentRoute, onNavigate = navigate) {
+        NavHost(navController = navController, startDestination = ROUTE_DASHBOARD) {
         composable(ROUTE_DASHBOARD) {
             val viewModel: DashboardViewModel = viewModel(factory = factory)
             DashboardScreen(viewModel = viewModel, onNavigate = navigate)
@@ -103,6 +113,7 @@ fun AetherNavHost(
         ) { backStackEntry ->
             val slug = backStackEntry.arguments?.getString("slug") ?: ""
             ComingSoonScreen(slug = slug, onNavigate = navigate)
+        }
         }
     }
 }

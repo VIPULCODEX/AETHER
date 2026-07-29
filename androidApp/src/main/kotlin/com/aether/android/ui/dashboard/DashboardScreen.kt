@@ -50,7 +50,7 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsState()
     val greeting = greetingForHour(LocalTime.now().hour)
 
-    AetherScaffold(title = greeting, currentRoute = "dashboard", onNavigate = onNavigate) {
+    AetherScaffold(title = greeting) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

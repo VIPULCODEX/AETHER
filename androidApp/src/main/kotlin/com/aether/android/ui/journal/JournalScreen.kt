@@ -88,7 +88,7 @@ fun JournalScreen(
     }
     val prompt = remember { REFLECTION_PROMPTS[localDateOrdinal() % REFLECTION_PROMPTS.size] }
 
-    AetherScaffold(title = "Journal", currentRoute = "journal", onNavigate = onNavigate) {
+    AetherScaffold(title = "Journal") {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

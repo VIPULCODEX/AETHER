@@ -79,6 +79,7 @@ val BOTTOM_NAV_ITEMS = listOf(
 private val MORE_ROUTES = setOf("more", "research", "settings", "coming_soon/gate")
 
 private val LocalTopBarHeight = compositionLocalOf { 96.dp }
+private val LocalBackdrop = compositionLocalOf<Backdrop?> { null }
 
 /**
  * Space every screen's own scrollable content should reserve at the top/bottom
@@ -96,29 +97,59 @@ object AetherBars {
 }
 
 /**
- * Edge-to-edge liquid-glass chrome (see github.com/Kyant0/AndroidLiquidGlass):
- * content renders full-bleed behind a frosted top title bar and a floating
- * capsule bottom nav bar, both of which live-sample and blur/refract the
- * actual content scrolling underneath via a single shared `LayerBackdrop`,
- * replacing the old opaque Material3 Scaffold bars (which reserved their own
- * space and never showed any content behind them) and the emoji tab icons.
+ * Edge-to-edge liquid-glass chrome (see github.com/Kyant0/AndroidLiquidGlass),
+ * wrapping the NavHost exactly once. Owns the shared `LayerBackdrop` and the
+ * floating bottom nav bar so both survive screen navigation — every
+ * `composable(route) { ... }` destination used to instantiate its own
+ * AetherScaffold, which tore down and rebuilt the nav bar's remembered
+ * selected-tab state (and thus its slide animation) on every tab switch,
+ * since there was never a previous frame in the same composable instance to
+ * animate from.
  */
 @Composable
-fun AetherScaffold(
-    title: String,
+fun AetherAppChrome(
     currentRoute: String,
     onNavigate: (String) -> Unit,
     content: @Composable () -> Unit
 ) {
     val backdrop = rememberLayerBackdrop()
-    val density = LocalDensity.current
-    var topBarHeight by remember { mutableStateOf(96.dp) }
 
     Box(
         Modifier
             .fillMaxSize()
             .background(AetherBackground)
     ) {
+        CompositionLocalProvider(LocalBackdrop provides backdrop) {
+            content()
+        }
+
+        GlassBottomNavBar(
+            currentRoute = currentRoute,
+            onNavigate = onNavigate,
+            backdrop = backdrop,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
+/**
+ * Per-screen frosted title bar over full-bleed content. Must be called from
+ * within [AetherAppChrome] — reads the shared backdrop it provides so the
+ * title bar's blur/refraction samples the same layer as the persistent
+ * bottom nav bar, rather than each screen recording its own.
+ */
+@Composable
+fun AetherScaffold(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    val backdrop = requireNotNull(LocalBackdrop.current) {
+        "AetherScaffold must be called inside AetherAppChrome"
+    }
+    val density = LocalDensity.current
+    var topBarHeight by remember { mutableStateOf(96.dp) }
+
+    Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -135,13 +166,6 @@ fun AetherScaffold(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onSizeChanged { size -> topBarHeight = with(density) { size.height.toDp() } }
-        )
-
-        GlassBottomNavBar(
-            currentRoute = currentRoute,
-            onNavigate = onNavigate,
-            backdrop = backdrop,
-            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }

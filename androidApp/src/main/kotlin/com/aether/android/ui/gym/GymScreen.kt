@@ -62,7 +62,7 @@ fun GymScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    AetherScaffold(title = "Gym", currentRoute = "gym", onNavigate = onNavigate) {
+    AetherScaffold(title = "Gym") {
         if (!state.gymIsFocusArea) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
