@@ -1,7 +1,8 @@
 package com.aether.android.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +34,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.theme.AetherBackground
 import com.aether.android.ui.theme.AetherSky
@@ -70,6 +78,8 @@ val BOTTOM_NAV_ITEMS = listOf(
 
 private val MORE_ROUTES = setOf("more", "research", "settings", "coming_soon/gate")
 
+private val LocalTopBarHeight = compositionLocalOf { 96.dp }
+
 /**
  * Space every screen's own scrollable content should reserve at the top/bottom
  * so real content — not just empty margin — scrolls underneath the floating
@@ -77,7 +87,11 @@ private val MORE_ROUTES = setOf("more", "research", "settings", "coming_soon/gat
  * over something instead of a tinted rectangle.
  */
 object AetherBars {
-    val TopContentPadding = 96.dp
+    // Backed by the top bar's actual measured height (status bar inset + text
+    // vary by device/font scale, so a fixed guess drifts and lets content peek
+    // out from behind the bar) rather than a fixed constant.
+    val TopContentPadding: Dp
+        @Composable get() = LocalTopBarHeight.current
     val BottomContentPadding = 108.dp
 }
 
@@ -97,6 +111,8 @@ fun AetherScaffold(
     content: @Composable () -> Unit
 ) {
     val backdrop = rememberLayerBackdrop()
+    val density = LocalDensity.current
+    var topBarHeight by remember { mutableStateOf(96.dp) }
 
     Box(
         Modifier
@@ -108,13 +124,17 @@ fun AetherScaffold(
                 .fillMaxSize()
                 .layerBackdrop(backdrop)
         ) {
-            content()
+            CompositionLocalProvider(LocalTopBarHeight provides topBarHeight) {
+                content()
+            }
         }
 
         GlassTopBar(
             title = title,
             backdrop = backdrop,
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { size -> topBarHeight = with(density) { size.height.toDp() } }
         )
 
         GlassBottomNavBar(
@@ -178,7 +198,7 @@ private fun GlassBottomNavBar(
         val tabWidth = maxWidth / BOTTOM_NAV_ITEMS.size
         val indicatorOffset by animateDpAsState(
             targetValue = tabWidth * selectedIndex,
-            animationSpec = spring(dampingRatio = 0.75f, stiffness = 380f),
+            animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
             label = "navIndicator"
         )
 
