@@ -4,6 +4,15 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.5] - 2026-07-29
+
+### Fixed
+- Nav pill's drag no longer hops between tabs: it was quantized to whole
+  tab-width jumps even while actively held, so sliding your finger across
+  the bar looked like discrete steps. It now tracks the raw finger
+  position pixel-for-pixel while dragging, and only snaps to the nearest
+  tab once you let go.
+
 ## [0.7.4] - 2026-07-29
 
 ### Changed
