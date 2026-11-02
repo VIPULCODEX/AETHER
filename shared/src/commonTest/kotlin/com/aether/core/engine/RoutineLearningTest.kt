@@ -80,4 +80,15 @@ class RoutineLearningTest {
         )
         assertEquals("r2", ContextEngine().suggestNow(ctx).routineId)
     }
+
+    @Test fun studyReviewsTeachWhenYouStudyWithoutPollutingDomains() {
+        val events = (0..7).map { i ->
+            com.aether.core.model.BehaviorEvent("s$i", now - i * dayMillis, com.aether.core.model.BehaviorEventType.STUDY_REVIEW, "Study", 21)
+        }
+        val learned = PersonalizationEngine().learn(emptyList(), emptyList(), emptyList(), events, now, hourOf)
+        assertEquals(8, learned.studyReviews)
+        assertEquals(0, learned.feedbackEvents)
+        assertTrue(learned.isPeakHour(21), "peak=${learned.peakStartHour}")
+        assertTrue(learned.domainStats.isEmpty())
+    }
 }

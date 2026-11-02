@@ -8,7 +8,10 @@ import com.aether.android.data.ShareInbox
 import com.aether.android.data.ReadableExtractor
 import com.aether.android.data.WebPageReader
 import com.aether.core.data.NotebookStorage
+import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.StudyRepository
+import com.aether.core.engine.SubtitleParser
+import com.aether.core.model.BehaviorEventType
 import com.aether.core.engine.Digest
 import com.aether.core.engine.DigestEngine
 import com.aether.core.engine.ExamEngine
@@ -62,7 +65,8 @@ data class StudyUiState(
     val notice: String? = null,
     val readerOpen: Boolean = false,
     val readerBusy: Boolean = false,
-    val readerUrl: String = ""
+    val readerUrl: String = "",
+    val playing: StudySource? = null
 ) {
     val dueCards: List<Flashcard> get() = cards.filter { it.dueAt <= System.currentTimeMillis() }
 }
@@ -74,7 +78,8 @@ class StudyViewModel(
     val mindMapEngine: MindMapEngine,
     private val llm: OnDeviceLlm,
     private val digestEngine: DigestEngine,
-    private val examEngine: ExamEngine
+    private val examEngine: ExamEngine,
+    private val personalizationRepository: PersonalizationRepository
 ) : ViewModel() {
 
     val llmStatus: StateFlow<LlmStatus> = llm.status
@@ -100,7 +105,8 @@ class StudyViewModel(
         val notice: String? = null,
         val readerOpen: Boolean = false,
         val readerBusy: Boolean = false,
-        val readerUrl: String = ""
+        val readerUrl: String = "",
+        val playingId: String? = null
     )
 
     private val data = selectedId.flatMapLatest { id ->
@@ -116,7 +122,8 @@ class StudyViewModel(
             notebooks = notebooks, selected = notebooks.find { it.id == id }, sources = sources, cards = cards,
             tab = l.tab, chat = l.chat, digest = l.digest, digestSourceId = l.digestSourceId, explanations = l.explanations,
             practice = l.practice, practiceMessage = l.practiceMessage, showAnswer = l.showAnswer, quiz = l.quiz,
-            thinking = l.thinking, notice = l.notice, readerOpen = l.readerOpen, readerBusy = l.readerBusy, readerUrl = l.readerUrl
+            thinking = l.thinking, notice = l.notice, readerOpen = l.readerOpen, readerBusy = l.readerBusy, readerUrl = l.readerUrl,
+            playing = sources.find { it.id == l.playingId }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StudyUiState())
 
@@ -192,6 +199,30 @@ class StudyViewModel(
             repository.addSource(id, title.ifBlank { content.lines().first().take(40) }, content, url)
             local.value = local.value.copy(digest = null)
         }
+    }
+
+    /** A video becomes a source through its subtitles: the transcript is what the study tools read. */
+    fun addVideoSource(videoUri: String, title: String, subtitleText: String) {
+        val id = selectedId.value ?: return
+        val cues = SubtitleParser.parse(subtitleText)
+        if (cues.isEmpty()) {
+            local.value = local.value.copy(notice = "That subtitle file had no readable lines. Use an .srt or .vtt file.")
+            return
+        }
+        viewModelScope.launch {
+            repository.addSource(
+                id, title, SubtitleParser.toStudyText(cues), mediaUri = videoUri, transcript = SubtitleParser.encode(cues)
+            )
+            local.value = local.value.copy(digest = null, notice = null)
+        }
+    }
+
+    fun play(sourceId: String) {
+        local.value = local.value.copy(playingId = sourceId)
+    }
+
+    fun stopPlaying() {
+        local.value = local.value.copy(playingId = null)
     }
 
     fun deleteSource(id: String) {
@@ -302,6 +333,7 @@ class StudyViewModel(
     fun grade(card: Flashcard, grade: Grade) {
         viewModelScope.launch {
             repository.applySchedule(card.id, SpacedRepetition.review(card, grade, System.currentTimeMillis()))
+            recordStudyActivity()
             local.value = local.value.copy(showAnswer = false)
         }
     }
@@ -314,6 +346,7 @@ class StudyViewModel(
     fun pickOption(index: Int) {
         val quiz = local.value.quiz ?: return
         if (quiz.picked != null || quiz.finished) return
+        viewModelScope.launch { recordStudyActivity() }
         val correct = quiz.questions[quiz.index].correctIndex == index
         local.value = local.value.copy(quiz = quiz.copy(picked = index, score = quiz.score + if (correct) 1 else 0))
     }
@@ -321,6 +354,12 @@ class StudyViewModel(
     fun nextQuestion() {
         val quiz = local.value.quiz ?: return
         local.value = local.value.copy(quiz = quiz.copy(index = quiz.index + 1, picked = null))
+    }
+
+    /** Remembers only *that* and *when* you studied (hour of day), if learning is on, so AETHER can find your study hours. */
+    private suspend fun recordStudyActivity() {
+        if (!personalizationRepository.observePrefs().first().learningEnabled) return
+        personalizationRepository.recordEvent(BehaviorEventType.STUDY_REVIEW, "Study", java.time.LocalTime.now().hour)
     }
 
     private companion object {

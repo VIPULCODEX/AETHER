@@ -1,0 +1,6 @@
+-- Migration from schema v8 to v9: video sources. `mediaUri` is the user's own
+-- video (a persisted-permission file URI, never copied); `transcript` holds its
+-- timed subtitle cues ("startMs|text" lines) for the player's transcript view.
+
+ALTER TABLE StudySource ADD COLUMN mediaUri TEXT;
+ALTER TABLE StudySource ADD COLUMN transcript TEXT;

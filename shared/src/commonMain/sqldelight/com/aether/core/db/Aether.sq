@@ -267,13 +267,15 @@ CREATE TABLE StudySource (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     createdAt INTEGER NOT NULL,
-    url TEXT
+    url TEXT,
+    mediaUri TEXT,
+    transcript TEXT
 );
 
 CREATE INDEX idx_source_notebook ON StudySource(notebookId);
 
 insertStudySource:
-INSERT INTO StudySource(id, notebookId, title, content, createdAt, url) VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO StudySource(id, notebookId, title, content, createdAt, url, mediaUri, transcript) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 selectSourceStorage:
 SELECT notebookId, COUNT(*) AS sourceCount, SUM(LENGTH(content)) AS chars FROM StudySource GROUP BY notebookId;

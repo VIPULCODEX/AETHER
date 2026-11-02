@@ -14,8 +14,8 @@ android {
         applicationId = "com.aether.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 27
-        versionName = "0.15.1"
+        versionCode = 28
+        versionName = "0.16.0"
     }
 
     buildFeatures {
@@ -53,4 +53,6 @@ dependencies {
     implementation(libs.mediapipe.tasks.genai)
     implementation(libs.pdfbox.android)
     implementation(libs.jsoup)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
 }

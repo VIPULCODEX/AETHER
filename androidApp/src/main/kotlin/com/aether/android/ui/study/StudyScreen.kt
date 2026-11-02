@@ -68,7 +68,7 @@ fun StudyScreen(viewModel: StudyViewModel) {
     val state by viewModel.uiState.collectAsState()
     val notebook = state.selected
 
-    BackHandler(enabled = notebook != null) { viewModel.close() }
+    BackHandler(enabled = notebook != null) { if (state.playing != null) viewModel.stopPlaying() else viewModel.close() }
 
     AetherScaffold(title = notebook?.title ?: "Study") {
         LazyColumn(
@@ -79,6 +79,7 @@ fun StudyScreen(viewModel: StudyViewModel) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item { ReaderCard(state, viewModel) }
+            state.playing?.let { playing -> item(key = "player-${playing.id}") { VideoPlayerCard(playing, onClose = viewModel::stopPlaying) } }
             if (notebook == null) {
                 notebookList(state, viewModel)
             } else {
@@ -156,6 +157,21 @@ private fun androidx.compose.foundation.lazy.LazyListScope.sourcesTab(state: Stu
                     .onFailure { vm.report(it.message ?: "Couldn't read that PDF") }
             }
         }
+        var pendingVideo by remember { mutableStateOf<Pair<Uri, String>?>(null) }
+        val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri != null) {
+                runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                pendingVideo = uri to (uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') ?: "Video")
+            }
+        }
+        val subtitlePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            val video = pendingVideo
+            if (uri != null && video != null) {
+                val text = runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }.getOrNull()
+                vm.addVideoSource(video.first.toString(), video.second, text.orEmpty())
+                pendingVideo = null
+            }
+        }
         AetherCard(modifier = Modifier.fillMaxWidth()) {
             Text("Add a source", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
             Spacer(Modifier.height(8.dp))
@@ -167,6 +183,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.sourcesTab(state: Stu
                 AetherButton("Add", enabled = text.isNotBlank(), onClick = { vm.addSource(title, text); title = ""; text = "" })
                 AetherOutlinedButton("Text file", onClick = { picker.launch(arrayOf("text/*")) })
                 AetherOutlinedButton("PDF", onClick = { pdfPicker.launch(arrayOf("application/pdf")) })
+            }
+            Spacer(Modifier.height(8.dp))
+            val video = pendingVideo
+            if (video == null) {
+                AetherOutlinedButton("Video + subtitles", onClick = { videoPicker.launch(arrayOf("video/*")) })
+            } else {
+                Text("Video chosen: ${video.second}. Now pick its subtitle file (.srt or .vtt) so AETHER can read what is said.", style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AetherButton("Pick subtitles", onClick = { subtitlePicker.launch(arrayOf("*/*")) })
+                    AetherOutlinedButton("Cancel", onClick = { pendingVideo = null })
+                }
             }
             state.notice?.let {
                 Spacer(Modifier.height(8.dp))
@@ -186,7 +214,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.sourcesTab(state: Stu
             Spacer(Modifier.height(4.dp))
             Text(source.content.take(160), style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
             Spacer(Modifier.height(8.dp))
-            Text("Remove", style = MaterialTheme.typography.labelLarge, color = AetherCoral, modifier = Modifier.clickable { vm.deleteSource(source.id) })
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                if (source.mediaUri != null) {
+                    Text("Play video", style = MaterialTheme.typography.labelLarge, color = AetherSky, modifier = Modifier.clickable { vm.play(source.id) })
+                }
+                Text("Remove", style = MaterialTheme.typography.labelLarge, color = AetherCoral, modifier = Modifier.clickable { vm.deleteSource(source.id) })
+            }
         }
     }
     item {
