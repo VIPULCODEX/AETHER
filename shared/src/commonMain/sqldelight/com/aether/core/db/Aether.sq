@@ -323,6 +323,40 @@ DELETE FROM Flashcard WHERE notebookId = ?;
 deleteFlashcardsForSource:
 DELETE FROM Flashcard WHERE sourceId = ?;
 
+CREATE TABLE StudyMistake (
+    id TEXT NOT NULL PRIMARY KEY,
+    notebookId TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    question TEXT NOT NULL,
+    correctAnswer TEXT NOT NULL,
+    yourAnswer TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    reviewCount INTEGER NOT NULL DEFAULT 0,
+    dueAt INTEGER NOT NULL,
+    resolved INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_mistake_notebook ON StudyMistake(notebookId);
+
+insertMistake:
+INSERT INTO StudyMistake(id, notebookId, topic, question, correctAnswer, yourAnswer, createdAt, reviewCount, dueAt, resolved)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 0);
+
+selectAllMistakes:
+SELECT * FROM StudyMistake ORDER BY createdAt DESC;
+
+selectAllFlashcards:
+SELECT * FROM Flashcard;
+
+updateMistakeReview:
+UPDATE StudyMistake SET reviewCount = ?, dueAt = ?, resolved = ? WHERE id = ?;
+
+deleteMistake:
+DELETE FROM StudyMistake WHERE id = ?;
+
+deleteMistakesForNotebook:
+DELETE FROM StudyMistake WHERE notebookId = ?;
+
 -- Routines: recurring daily habits / fixed commitments, plus their completion log.
 CREATE TABLE Routine (
     id TEXT NOT NULL PRIMARY KEY,

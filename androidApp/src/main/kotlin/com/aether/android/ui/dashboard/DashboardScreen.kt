@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AccentCard
 import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherCard
+import com.aether.core.engine.StudyProgress
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.theme.AetherCoral
 import com.aether.android.ui.theme.AetherCyan
@@ -73,6 +74,7 @@ fun DashboardScreen(
     onNavigate: (String) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val studyProgress by viewModel.studyProgress.collectAsState()
     val greeting = greetingForHour(LocalTime.now().hour)
 
     AetherScaffold(title = greeting) {
@@ -107,6 +109,10 @@ fun DashboardScreen(
             }
 
             item { TodayCard(state, viewModel, onNavigate) }
+
+            studyProgress?.let { p ->
+                item { StudyProgressCard(p, onOpen = { onNavigate("study") }) }
+            }
 
             state.lifeVisionProgress?.let { progress ->
                 item {
@@ -460,5 +466,37 @@ private fun TodayCard(state: DashboardUiState, vm: DashboardViewModel, onNavigat
                 }
             }
         }
+    }
+}
+
+
+@Composable
+private fun StudyProgressCard(p: StudyProgress, onOpen: () -> Unit) {
+    AetherCard(modifier = Modifier.fillMaxWidth(), onClick = onOpen) {
+        Text("Study progress", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            StudyStat("${p.cardsDue}", "cards due", if (p.cardsDue > 0) AetherSky else AetherTextSecondary)
+            StudyStat("${p.maturePercent}%", "cards stuck", AetherEmerald)
+            StudyStat("${p.mistakesDue}", "mistakes to redo", if (p.mistakesDue > 0) AetherCoral else AetherTextSecondary)
+        }
+        if (p.weakTopics.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Text("Weakest topics", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+            p.weakTopics.forEach { w ->
+                Text(
+                    "${w.topic} · ${w.open} open" + if (w.dueNow > 0) " (${w.dueNow} due)" else "",
+                    style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudyStat(value: String, label: String, color: Color) {
+    Column {
+        Text(value, style = MaterialTheme.typography.headlineSmall, color = color)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
     }
 }

@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
                     examEngine = app.examEngine,
                     apiKeyStore = app.apiKeyStore,
                     groqScheduleClient = app.groqScheduleClient,
+                    claudeNotesClient = app.claudeNotesClient,
                     alarmPreferences = app.alarmPreferences,
                     alarmScheduler = app.alarmScheduler
                 )

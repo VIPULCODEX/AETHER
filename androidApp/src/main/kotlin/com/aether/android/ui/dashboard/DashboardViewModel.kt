@@ -6,6 +6,9 @@ import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.RoutineRepository
+import com.aether.core.data.StudyRepository
+import com.aether.core.engine.ProgressEngine
+import com.aether.core.engine.StudyProgress
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.LearnedProfile
 import com.aether.core.engine.PersonalizationEngine
@@ -27,7 +30,9 @@ import com.aether.core.model.Routine
 import com.aether.core.model.RoutineLog
 import com.aether.core.model.ResearchNote
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -68,8 +73,14 @@ class DashboardViewModel(
     private val contextEngine: ContextEngine,
     private val personalizationRepository: PersonalizationRepository,
     private val personalizationEngine: PersonalizationEngine,
-    private val routineRepository: RoutineRepository
+    private val routineRepository: RoutineRepository,
+    studyRepository: StudyRepository
 ) : ViewModel() {
+
+    /** Cards + error notebook at a glance; null until there is anything to show. */
+    val studyProgress: StateFlow<StudyProgress?> = combine(studyRepository.observeAllCards(), studyRepository.observeMistakes()) { cards, mistakes ->
+        ProgressEngine.snapshot(cards, mistakes, System.currentTimeMillis()).takeIf { it.hasAnything }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()

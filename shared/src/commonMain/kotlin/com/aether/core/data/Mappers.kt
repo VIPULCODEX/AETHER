@@ -2,6 +2,8 @@ package com.aether.core.data
 
 import com.aether.core.db.BodyLog as BodyLogRow
 import com.aether.core.db.Flashcard as FlashcardRow
+import com.aether.core.db.StudyMistake as StudyMistakeRow
+import com.aether.core.model.StudyMistake
 import com.aether.core.db.Notebook as NotebookRow
 import com.aether.core.db.Routine as RoutineRow
 import com.aether.core.db.StudySource as StudySourceRow
@@ -134,4 +136,9 @@ internal fun RoutineRow.toDomain() = Routine(
     fixedStartMinute = fixedStartMinute?.toInt(),
     createdAt = createdAt,
     archived = archived == 1L
+)
+
+internal fun StudyMistakeRow.toDomain() = StudyMistake(
+    id = id, notebookId = notebookId, topic = topic, question = question, correctAnswer = correctAnswer,
+    yourAnswer = yourAnswer, createdAt = createdAt, reviewCount = reviewCount.toInt(), dueAt = dueAt, resolved = resolved != 0L
 )

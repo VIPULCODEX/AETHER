@@ -31,3 +31,19 @@ fun extractJsonArray(reply: String): String? {
     val end = cleaned.lastIndexOf(']')
     return if (start in 0 until end) cleaned.substring(start, end + 1) else null
 }
+
+/**
+ * Picks a Claude model from whatever /v1/models returns for the user's own key (the API lists newest first), so no
+ * model id is ever written into the app. Family preference only: balanced "sonnet" first, then "haiku", then the newest.
+ */
+fun pickClaudeModel(availableIds: List<String>): String? {
+    val usable = availableIds.filter { it.startsWith("claude", ignoreCase = true) }
+    return listOf("sonnet", "haiku").firstNotNullOfOrNull { fam -> usable.firstOrNull { fam in it.lowercase() } } ?: usable.firstOrNull()
+}
+
+/** First JSON object in a model reply, tolerating code fences and preambles. */
+fun extractJsonObject(reply: String): String? {
+    val start = reply.indexOf('{')
+    val end = reply.lastIndexOf('}')
+    return if (start in 0 until end) reply.substring(start, end + 1) else null
+}

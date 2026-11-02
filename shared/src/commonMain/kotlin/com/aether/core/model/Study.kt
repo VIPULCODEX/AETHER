@@ -30,3 +30,17 @@ data class Flashcard(
     val dueAt: Long,
     val createdAt: Long
 )
+
+/** A wrong answer kept for spaced revision. [dueAt] moves out each time it's answered right; after enough, it's [resolved]. */
+data class StudyMistake(
+    val id: String,
+    val notebookId: String,
+    val topic: String,
+    val question: String,
+    val correctAnswer: String,
+    val yourAnswer: String,
+    val createdAt: Long,
+    val reviewCount: Int,
+    val dueAt: Long,
+    val resolved: Boolean
+)

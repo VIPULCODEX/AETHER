@@ -48,6 +48,7 @@ import com.aether.android.ui.theme.AetherSurface2
 import com.aether.android.ui.theme.AetherTextPrimary
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.aether.core.engine.Grade
+import com.aether.core.engine.NotesPipeline
 import com.aether.core.engine.PracticeQuestion
 import com.aether.core.engine.QuestionType
 import androidx.compose.foundation.lazy.LazyListScope
@@ -94,10 +95,12 @@ fun StudyScreen(viewModel: StudyViewModel) {
                     StudyTab.SOURCES -> sourcesTab(state, viewModel)
                     StudyTab.ASK -> askTab(state, viewModel)
                     StudyTab.DIGEST -> digestTab(state, viewModel)
+                    StudyTab.NOTES -> notesTab(state, vm)
                     StudyTab.PRACTICE -> practiceTab(state, viewModel)
                     StudyTab.MAP -> mapTab(state, viewModel)
                     StudyTab.CARDS -> cardsTab(state, viewModel)
                     StudyTab.QUIZ -> quizTab(state, viewModel)
+                    StudyTab.ERRORS -> errorsTab(viewModel)
                 }
             }
         }
@@ -589,12 +592,12 @@ private fun LazyListScope.practiceTab(state: StudyUiState, vm: StudyViewModel) {
     }
     state.practiceMessage?.let { item { Text(it, style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary) } }
     state.practice?.let { questions ->
-        items(questions.size) { i -> PracticeCard(i + 1, questions[i]) }
+        items(questions.size) { i -> PracticeCard(i + 1, questions[i]) { yours -> vm.recordMistake(state.practiceTopic, questions[i].prompt, questions[i].answerText(), yours) } }
     }
 }
 
 @Composable
-private fun PracticeCard(number: Int, q: PracticeQuestion) {
+private fun PracticeCard(number: Int, q: PracticeQuestion, onWrong: (String) -> Unit) {
     var selected by remember(q) { mutableStateOf(emptySet<Int>()) }
     var typed by remember(q) { mutableStateOf("") }
     var checked by remember(q) { mutableStateOf(false) }
@@ -635,7 +638,10 @@ private fun PracticeCard(number: Int, q: PracticeQuestion) {
         }
         Spacer(Modifier.height(6.dp))
         if (!checked) {
-            AetherButton("Check", enabled = selected.isNotEmpty() || typed.isNotBlank(), onClick = { checked = true })
+            AetherButton("Check", enabled = selected.isNotEmpty() || typed.isNotBlank(), onClick = {
+                checked = true
+                if (!correct) onWrong(if (q.type == QuestionType.NAT) typed else selected.sorted().joinToString(", ") { "${'A' + it}" })
+            })
         } else {
             Text(if (correct) "Correct" else "Not quite", style = MaterialTheme.typography.titleMedium, color = if (correct) AetherEmerald else AetherCoral)
             if (q.type == QuestionType.NAT) Text("Answer: ${q.numeric}", style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary)
@@ -688,4 +694,102 @@ private fun formatBytes(bytes: Long): String = when {
     bytes >= 1_000_000 -> "%.1f MB".format(bytes / 1_000_000.0)
     bytes >= 1_000 -> "%.0f KB".format(bytes / 1_000.0)
     else -> "$bytes B"
+}
+
+
+private fun LazyListScope.notesTab(state: StudyUiState, vm: StudyViewModel) {
+    if (state.sources.isEmpty()) {
+        item { Text("Add a PDF or text source and structured notes appear here.", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary) }
+        return
+    }
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Pick a source. On-device notes are instant and free; Deep notes use your own Claude key.", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                state.sources.forEach { src ->
+                    Pill(src.title.take(26), selected = state.notesSourceId == src.id) { vm.buildNotes(src.id, deep = false) }
+                }
+            }
+            if (vm.hasClaudeKey) {
+                Text("Deep notes (cloud): sends this source's text, one section at a time, to Anthropic with your key.", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    state.sources.forEach { src -> AetherOutlinedButton("Deep: ${src.title.take(20)}", onClick = { vm.buildNotes(src.id, deep = true) }) }
+                }
+            }
+        }
+    }
+    state.notesBusy?.let { busy -> item { Text(busy, style = MaterialTheme.typography.bodyMedium, color = AetherSky) } }
+    state.notice?.let { n -> item { Text(n, style = MaterialTheme.typography.labelSmall, color = AetherCoral) } }
+    if (state.notes.isEmpty()) return
+    item {
+        val sheet = NotesPipeline.revisionSheet(state.notes)
+        val context = LocalContext.current
+        AetherCard(modifier = Modifier.fillMaxWidth()) {
+            Text("One-page revision sheet", style = MaterialTheme.typography.titleMedium, color = AetherEmerald)
+            Text(
+                (if (state.notesDeep) "Cloud-extracted" else "On-device extracted") + " · checked against the source pages · ${sheet.length}/2800 characters",
+                style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(sheet, style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary)
+            Spacer(Modifier.height(10.dp))
+            AetherOutlinedButton("Copy sheet", onClick = {
+                val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("AETHER revision sheet", sheet))
+                vm.report("Revision sheet copied.")
+            })
+        }
+    }
+    item { SectionHeader("Detailed notes", "⚠ marks anything the source pages didn't confirm. Check those against the page.") }
+    items(state.notes.size) { i ->
+        val n = state.notes[i]
+        AetherCard(modifier = Modifier.fillMaxWidth()) {
+            Text("${n.topic}  ·  ${n.pageLabel}", style = MaterialTheme.typography.titleMedium, color = if (n.lowConfidence) AetherCoral else AetherSky)
+            if (n.summary.isNotBlank()) { Spacer(Modifier.height(4.dp)); Text(n.summary, style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary) }
+            n.definitions.forEach { Spacer(Modifier.height(4.dp)); Text("Definition: $it", style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary) }
+            n.formulas.forEach { Spacer(Modifier.height(4.dp)); Text("Formula: $it", style = MaterialTheme.typography.bodyMedium, color = AetherEmerald) }
+            if (n.flow.isNotBlank()) { Spacer(Modifier.height(4.dp)); Text("Flow: ${n.flow}", style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary) }
+            n.traps.forEach { Spacer(Modifier.height(4.dp)); Text("Trap: $it", style = MaterialTheme.typography.bodyMedium, color = AetherCoral) }
+            if (n.example.isNotBlank()) { Spacer(Modifier.height(4.dp)); Text("Example: ${n.example}", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary) }
+            n.flags.forEach { Spacer(Modifier.height(2.dp)); Text("⚠ $it", style = MaterialTheme.typography.labelSmall, color = AetherCoral) }
+        }
+    }
+}
+
+
+private fun LazyListScope.errorsTab(vm: StudyViewModel) {
+    item {
+        val all by vm.mistakes.collectAsState()
+        val open = all.filter { !it.resolved }
+        val now = System.currentTimeMillis()
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "Every wrong answer lands here with its topic and comes back after 1, 3, 7 and 21 days until you get it right 4 times in a row.",
+                style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary
+            )
+            if (open.isEmpty()) Text("Nothing here yet. Wrong answers in Practice and Quiz are saved automatically.", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+            open.sortedBy { it.dueAt }.forEach { m ->
+                var shown by remember(m.id) { mutableStateOf(false) }
+                val due = m.dueAt <= now
+                AetherCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(m.topic + if (due) " · due now" else " · in ${((m.dueAt - now) / 86_400_000L) + 1} day(s)", style = MaterialTheme.typography.labelSmall, color = if (due) AetherCoral else AetherTextSecondary)
+                    Spacer(Modifier.height(4.dp))
+                    Text(m.question, style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                    if (shown) {
+                        Spacer(Modifier.height(6.dp))
+                        Text("Answer: ${m.correctAnswer}", style = MaterialTheme.typography.bodyMedium, color = AetherEmerald)
+                        if (m.yourAnswer.isNotBlank()) Text("You said: ${m.yourAnswer}", style = MaterialTheme.typography.bodyMedium, color = AetherCoral)
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AetherButton("Got it", onClick = { vm.reviewMistake(m, true) })
+                            AetherOutlinedButton("Still wrong", onClick = { vm.reviewMistake(m, false) })
+                        }
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        AetherOutlinedButton("Show answer", onClick = { shown = true })
+                    }
+                }
+            }
+        }
+    }
 }

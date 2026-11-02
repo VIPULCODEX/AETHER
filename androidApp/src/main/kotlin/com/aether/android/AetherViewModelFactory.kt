@@ -47,6 +47,7 @@ class AetherViewModelFactory(
     private val examEngine: ExamEngine,
     private val apiKeyStore: ApiKeyStore,
     private val groqScheduleClient: GroqScheduleClient,
+    private val claudeNotesClient: com.aether.android.data.ClaudeNotesClient,
     private val alarmPreferences: AlarmPreferences,
     private val alarmScheduler: AlarmScheduler
 ) : ViewModelProvider.Factory {
@@ -55,7 +56,7 @@ class AetherViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         return when (modelClass) {
             DashboardViewModel::class.java ->
-                DashboardViewModel(repository, goalsRepository, scoringEngine, contextEngine, personalizationRepository, personalizationEngine, routineRepository) as T
+                DashboardViewModel(repository, goalsRepository, scoringEngine, contextEngine, personalizationRepository, personalizationEngine, routineRepository, studyRepository) as T
 
             JournalViewModel::class.java ->
                 JournalViewModel(repository) as T
@@ -76,7 +77,7 @@ class AetherViewModelFactory(
                 PersonalizeViewModel(repository, goalsRepository, personalizationRepository, personalizationEngine, routineRepository) as T
 
             StudyViewModel::class.java ->
-                StudyViewModel(studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, personalizationRepository) as T
+                StudyViewModel(studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, personalizationRepository, apiKeyStore, claudeNotesClient) as T
 
             LifeMapViewModel::class.java ->
                 LifeMapViewModel(goalsRepository, mindMapEngine) as T

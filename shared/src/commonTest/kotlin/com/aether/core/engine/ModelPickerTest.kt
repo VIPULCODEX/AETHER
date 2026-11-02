@@ -21,4 +21,11 @@ class ModelPickerTest {
         assertEquals("[1,2]", extractJsonArray("<think>I should [maybe] reason</think>\nHere: [1,2] done"))
         assertNull(extractJsonArray("no array here"))
     }
+
+    @Test fun claudePickerPrefersSonnetFamilyWithoutHardcodedIds() {
+        assertEquals("claude-x-sonnet-9", pickClaudeModel(listOf("claude-x-opus-9", "claude-x-sonnet-9", "claude-x-haiku-9")))
+        assertEquals("claude-y-haiku-2", pickClaudeModel(listOf("claude-y-opus-2", "claude-y-haiku-2")))
+        assertEquals("claude-z-opus-1", pickClaudeModel(listOf("other", "claude-z-opus-1")))
+        assertNull(pickClaudeModel(listOf("gpt-x")))
+    }
 }

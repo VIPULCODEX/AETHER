@@ -59,6 +59,9 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     LaunchedEffect(savedKey) { draft = savedKey }
+    val claudeSaved by viewModel.claudeKey.collectAsState()
+    var claudeDraft by remember { mutableStateOf(claudeSaved) }
+    LaunchedEffect(claudeSaved) { claudeDraft = claudeSaved }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -183,6 +186,37 @@ fun SettingsScreen(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text("A Groq key is saved.", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+                    }
+                }
+            }
+
+            item { SectionHeader("Claude API key (optional)", "Powers \"Deep notes\" in the Study Hub.") }
+            item {
+                AetherCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Optional. Without it, notes are built fully on-device. With your own key from " +
+                            "console.anthropic.com, \"Deep notes\" sends one section at a time of the source you pick " +
+                            "straight from your phone to Anthropic. The key stays on this device, and the model is " +
+                            "chosen automatically from what your key can use.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AetherTextSecondary
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = claudeDraft,
+                        onValueChange = { claudeDraft = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("sk-ant-...") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        colors = aetherTextFieldColors()
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    AetherButton(text = "Save", modifier = Modifier.fillMaxWidth(), onClick = { viewModel.saveClaude(claudeDraft) })
+                    if (claudeSaved.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        AetherOutlinedButton(text = "Remove key", onClick = { viewModel.clearClaude(); claudeDraft = "" })
+                        Spacer(Modifier.height(6.dp))
+                        Text("A Claude key is saved.", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
                     }
                 }
             }
