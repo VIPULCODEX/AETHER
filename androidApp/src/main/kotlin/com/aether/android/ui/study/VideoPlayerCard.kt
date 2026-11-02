@@ -52,7 +52,7 @@ import kotlinx.coroutines.delay
 fun VideoPlayerCard(source: StudySource, onClose: () -> Unit) {
     val context = LocalContext.current
     val cues = remember(source.transcript) { SubtitleParser.decode(source.transcript) }
-    val player = remember(source.id) {
+    val exo = remember(source.id) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.parse(source.mediaUri)))
             prepare()
@@ -62,21 +62,21 @@ fun VideoPlayerCard(source: StudySource, onClose: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var position by remember { mutableLongStateOf(0L) }
 
-    DisposableEffect(player) {
+    DisposableEffect(exo) {
         val listener = object : Player.Listener {
             override fun onPlayerError(e: PlaybackException) {
                 error = "Couldn't play this video (${e.errorCodeName}). The file may have moved, or the format isn't supported."
             }
         }
-        player.addListener(listener)
+        exo.addListener(listener)
         onDispose {
-            player.removeListener(listener)
-            player.release()
+            exo.removeListener(listener)
+            exo.release()
         }
     }
-    LaunchedEffect(player) {
+    LaunchedEffect(exo) {
         while (true) {
-            position = player.currentPosition
+            position = exo.currentPosition
             delay(400)
         }
     }
@@ -90,7 +90,7 @@ fun VideoPlayerCard(source: StudySource, onClose: () -> Unit) {
         }
         Spacer(Modifier.height(10.dp))
         AndroidView(
-            factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = true } },
+            factory = { ctx -> PlayerView(ctx).apply { player = exo; useController = true } },
             modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
         )
         error?.let {
@@ -112,7 +112,7 @@ fun VideoPlayerCard(source: StudySource, onClose: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(if (i == current) AetherSurface2 else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(10.dp))
-                            .clickable { player.seekTo(cue.startMs); player.play() }
+                            .clickable { exo.seekTo(cue.startMs); exo.play() }
                             .padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }

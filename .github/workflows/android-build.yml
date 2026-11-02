@@ -35,7 +35,16 @@ jobs:
         continue-on-error: true  # report-only until the first green run; flip to blocking after
 
       - name: Build debug APK
-        run: gradle :androidApp:assembleDebug --no-daemon
+        run: gradle :androidApp:assembleDebug --no-daemon 2>&1 | tee build.log
+
+      # Compile errors otherwise sit in the raw log (admin-only); surface them as check annotations.
+      - name: Surface build errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|What went wrong|Execution failed|requires libraries|depends on" build.log | head -30 | while IFS= read -r line; do
+            line="${line//'%'/'%25'}"
+            echo "::error::${line:0:400}"
+          done
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
