@@ -14,8 +14,8 @@ android {
         applicationId = "com.aether.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "0.7.5"
+        versionCode = 22
+        versionName = "0.13.0"
     }
 
     buildFeatures {
@@ -50,4 +50,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
     implementation(libs.kyant.backdrop)
+    implementation(libs.mediapipe.tasks.genai)
+    implementation(libs.pdfbox.android)
+    implementation(libs.jsoup)
 }

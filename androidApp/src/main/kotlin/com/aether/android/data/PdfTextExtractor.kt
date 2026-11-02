@@ -1,0 +1,29 @@
+package com.aether.android.data
+
+import android.content.Context
+import android.net.Uri
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+private const val MAX_CHARS = 400_000
+
+/** Pulls selectable text out of a PDF on-device. Scanned/image-only PDFs have none; those need OCR, which this doesn't do. */
+object PdfTextExtractor {
+
+    suspend fun extract(context: Context, uri: Uri): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            PDFBoxResourceLoader.init(context.applicationContext)
+            val stream = context.contentResolver.openInputStream(uri) ?: error("Couldn't open the PDF")
+            stream.use { input ->
+                PDDocument.load(input).use { doc ->
+                    val text = PDFTextStripper().getText(doc).replace(Regex("[ \\t]+\\n"), "\n").trim()
+                    require(text.isNotBlank()) { "This PDF has no selectable text (it looks scanned)." }
+                    text.take(MAX_CHARS)
+                }
+            }
+        }
+    }
+}

@@ -4,14 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
+import com.aether.core.data.PersonalizationRepository
 import com.aether.core.engine.ContextEngine
+import com.aether.core.engine.LearnedProfile
+import com.aether.core.engine.PersonalizationEngine
+import com.aether.core.engine.SuggestionContext
 import com.aether.core.engine.LifeScoreBreakdown
 import com.aether.core.engine.LifeVisionProgress
 import com.aether.core.engine.ScoringEngine
 import com.aether.core.engine.Suggestion
+import com.aether.core.model.BehaviorEvent
+import com.aether.core.model.BehaviorEventType
 import com.aether.core.model.BodyLog
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
+import com.aether.core.model.PersonalizationPrefs
 import com.aether.core.model.ResearchNote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,20 +44,28 @@ data class DashboardUiState(
     val journalEntriesThisWeek: Int = 0,
     val latestBodyLog: BodyLog? = null,
     val latestResearchNote: ResearchNote? = null,
-    val researchNoteCount: Int = 0
+    val researchNoteCount: Int = 0,
+    val prefs: PersonalizationPrefs = PersonalizationPrefs(),
+    val learned: LearnedProfile = LearnedProfile.EMPTY
 )
 
 class DashboardViewModel(
     private val repository: AetherRepository,
     private val goalsRepository: GoalsRepository,
     private val scoringEngine: ScoringEngine,
-    private val contextEngine: ContextEngine
+    private val contextEngine: ContextEngine,
+    private val personalizationRepository: PersonalizationRepository,
+    private val personalizationEngine: PersonalizationEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     private var latestCheckIns: List<DailyCheckIn> = emptyList()
+    private var latestPrefs = PersonalizationPrefs()
+
+    /** Tasks/goals the user tapped "Not now" on this session, so the next-best item surfaces instead. */
+    private val skipped = MutableStateFlow<Set<String>>(emptySet())
 
     init {
         viewModelScope.launch {
@@ -69,18 +84,42 @@ class DashboardViewModel(
                 Extra(focusAreas, journalEntries.size, bodyLogs.firstOrNull(), researchNotes.firstOrNull(), researchNotes.size, journalEntries.count(::isThisWeek))
             }
 
-            combine(core, extra) { (checkIns, goals, tasks), extraData ->
-                Snapshot(checkIns, goals, tasks, extraData)
+            val personal = combine(
+                personalizationRepository.observePrefs(),
+                personalizationRepository.observeBehaviorEvents(),
+                skipped
+            ) { prefs, events, skippedIds -> Personal(prefs, events, skippedIds) }
+
+            combine(core, extra, personal) { (checkIns, goals, tasks), extraData, personalData ->
+                Snapshot(checkIns, goals, tasks, extraData, personalData)
             }
-                .collect { (checkIns, goals, tasks, extraData) ->
+                .collect { (checkIns, goals, tasks, extraData, personalData) ->
                     latestCheckIns = checkIns
+                    latestPrefs = personalData.prefs
                     val today = LocalDate.now().toString()
                     val todayCheckIn = checkIns.find { it.date == today }
 
                     val lifeScore = scoringEngine.compute(checkIns, goals)
                     val lifeVisionProgress = scoringEngine.computeLifeVisionProgress(goals, tasks)
                     val hour = LocalTime.now().hour
-                    val suggestion = contextEngine.suggestNow(hour, todayCheckIn, goals)
+                    val nowMillis = System.currentTimeMillis()
+                    val learned = if (personalData.prefs.learningEnabled) {
+                        personalizationEngine.learn(tasks, goals, checkIns, personalData.events, nowMillis, ::hourOf)
+                    } else {
+                        LearnedProfile.EMPTY
+                    }
+                    val suggestion = contextEngine.suggestNow(
+                        SuggestionContext(
+                            nowMillis = nowMillis,
+                            hourOfDay = hour,
+                            todayCheckIn = todayCheckIn,
+                            goals = goals,
+                            openTasks = tasks.filter { !it.isDone },
+                            prefs = personalData.prefs,
+                            learned = learned,
+                            skipped = personalData.skipped
+                        )
+                    )
 
                     val todayDate = LocalDate.now()
                     val weekStrip = (6 downTo 0).map { offset ->
@@ -105,7 +144,9 @@ class DashboardViewModel(
                         journalEntriesThisWeek = extraData.journalEntriesThisWeek,
                         latestBodyLog = extraData.latestBodyLog,
                         latestResearchNote = extraData.latestResearchNote,
-                        researchNoteCount = extraData.researchNoteCount
+                        researchNoteCount = extraData.researchNoteCount,
+                        prefs = personalData.prefs,
+                        learned = learned
                     )
                 }
         }
@@ -116,21 +157,45 @@ class DashboardViewModel(
         viewModelScope.launch {
             val today = LocalDate.now().toString()
             val todayCheckIn = latestCheckIns.find { it.date == today }
+            val nowDone = todayCheckIn?.executedMission != true
             repository.upsertTodayCheckIn(
                 date = today,
                 mood = todayCheckIn?.mood,
                 energy = todayCheckIn?.energy,
                 sleepHours = todayCheckIn?.sleepHours,
-                executedMission = todayCheckIn?.executedMission != true
+                executedMission = nowDone
             )
+            // Finishing the suggested mission is the strongest "this was right for me" signal.
+            if (nowDone) recordFeedback(BehaviorEventType.SUGGESTION_ACCEPTED)
         }
+    }
+
+    /** "Not now": remember the rejection (so similar suggestions get rarer) and surface the next-best item. */
+    fun dismissSuggestion() {
+        val suggestion = _uiState.value.suggestion ?: return
+        val id = suggestion.taskId ?: suggestion.goalId ?: return
+        skipped.value = skipped.value + id
+        viewModelScope.launch { recordFeedback(BehaviorEventType.SUGGESTION_DISMISSED) }
+    }
+
+    private suspend fun recordFeedback(type: BehaviorEventType) {
+        val suggestion = _uiState.value.suggestion ?: return
+        if (!latestPrefs.learningEnabled || suggestion.domain == null) return
+        personalizationRepository.recordEvent(type, suggestion.domain, LocalTime.now().hour)
     }
 
     private data class Snapshot(
         val checkIns: List<DailyCheckIn>,
         val goals: List<Goal>,
         val tasks: List<com.aether.core.model.Task>,
-        val extra: Extra
+        val extra: Extra,
+        val personal: Personal
+    )
+
+    private data class Personal(
+        val prefs: PersonalizationPrefs,
+        val events: List<BehaviorEvent>,
+        val skipped: Set<String>
     )
 
     private data class Extra(
@@ -141,6 +206,8 @@ class DashboardViewModel(
         val researchNoteCount: Int,
         val journalEntriesThisWeek: Int
     )
+
+    private fun hourOf(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour
 
     private fun isThisWeek(entry: com.aether.core.model.JournalEntry): Boolean {
         val entryDate = Instant.ofEpochMilli(entry.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()

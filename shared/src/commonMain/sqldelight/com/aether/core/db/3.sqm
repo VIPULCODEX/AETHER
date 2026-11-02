@@ -1,0 +1,18 @@
+-- Migration from schema v3 to v4: personalization. `Preference` is a plain
+-- key/value store for everything the user states explicitly (persona, tone,
+-- modules, waking hours...), and `BehaviorEvent` logs accept/dismiss feedback
+-- on suggestions so the Context Engine can learn what actually works for this
+-- person. Both stay on-device like the rest of the Life Data Store.
+
+CREATE TABLE Preference (
+    prefKey TEXT NOT NULL PRIMARY KEY,
+    prefValue TEXT NOT NULL
+);
+
+CREATE TABLE BehaviorEvent (
+    id TEXT NOT NULL PRIMARY KEY,
+    createdAt INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    domain TEXT,
+    hourOfDay INTEGER NOT NULL
+);

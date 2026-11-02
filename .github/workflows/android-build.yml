@@ -30,6 +30,10 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Unit tests (engines)
+        run: gradle :shared:testDebugUnitTest --no-daemon
+        continue-on-error: true  # report-only until the first green run; flip to blocking after
+
       - name: Build debug APK
         run: gradle :androidApp:assembleDebug --no-daemon
 
