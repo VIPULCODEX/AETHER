@@ -32,7 +32,7 @@ class ExamEngine(private val study: StudyEngine = StudyEngine()) {
         if (!examNotes.isNullOrBlank()) appendLine("How this exam usually tests it: ${examNotes.trim()}")
         appendLine()
         appendLine("Material:")
-        appendLine(text.take(2500))
+        appendLine(text.take(1800))
         append("Explanation:")
     }
 
@@ -65,7 +65,7 @@ class ExamEngine(private val study: StudyEngine = StudyEngine()) {
         if (llm == null || !llm.isReady || chunks.isEmpty()) return emptyList()
         val selected = if (!topic.isNullOrBlank()) study.retrieve(topic, chunks, 4).map { it.first } else spread(chunks, 4)
         if (selected.isEmpty()) return emptyList()
-        val passages = selected.joinToString("\n") { "- ${it.text}" }.take(2800)
+        val passages = selected.joinToString("\n") { "- ${it.text}" }.take(1800)
         val raw = runCatching { llm.generate(practicePrompt(passages, examNotes, count)) }.getOrNull() ?: return emptyList()
         return parseQuestions(raw)
     }

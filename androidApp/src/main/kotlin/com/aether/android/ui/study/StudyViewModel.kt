@@ -142,6 +142,10 @@ class StudyViewModel(
         viewModelScope.launch { llm.importModel(uri, name) }
     }
 
+    fun downloadModel() {
+        viewModelScope.launch { llm.downloadDefaultModel() }
+    }
+
     fun removeModel() = llm.removeModel()
 
     fun report(message: String?) {

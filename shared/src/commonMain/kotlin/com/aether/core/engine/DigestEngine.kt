@@ -47,7 +47,7 @@ class DigestEngine(private val study: StudyEngine = StudyEngine()) {
     suspend fun digestGrounded(text: String, llm: LocalLlm?): Digest {
         val base = digest(text)
         if (llm == null || !llm.isReady) return base
-        val prompt = "Write a 2 sentence TL;DR of the notes below. Use only information in the notes.\n\nNotes:\n${text.take(3000)}\n\nTL;DR:"
+        val prompt = "Write a 2 sentence TL;DR of the notes below. Use only information in the notes.\n\nNotes:\n${text.take(2200)}\n\nTL;DR:"
         val tldr = runCatching { llm.generate(prompt) }.getOrNull()?.trim()
         return if (tldr.isNullOrBlank()) base else base.copy(tldr = tldr, byModel = true)
     }
