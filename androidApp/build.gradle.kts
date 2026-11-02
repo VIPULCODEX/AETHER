@@ -14,8 +14,8 @@ android {
         applicationId = "com.aether.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.13.0"
+        versionCode = 24
+        versionName = "0.14.0"
     }
 
     buildFeatures {

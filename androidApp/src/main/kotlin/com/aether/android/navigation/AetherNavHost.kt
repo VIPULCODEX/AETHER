@@ -3,7 +3,6 @@ package com.aether.android.navigation
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +38,8 @@ import com.aether.android.ui.mindmap.LifeMapViewModel
 import com.aether.android.ui.personalize.PersonalizeScreen
 import com.aether.android.ui.personalize.PersonalizeViewModel
 import com.aether.android.ui.research.ResearchScreen
+import com.aether.android.ui.routines.RoutinesScreen
+import com.aether.android.ui.routines.RoutinesViewModel
 import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsScreen
 import com.aether.android.ui.settings.SettingsViewModel
@@ -47,6 +48,7 @@ import com.aether.android.ui.study.StudyViewModel
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.PersonalizationRepository
+import com.aether.core.data.RoutineRepository
 import com.aether.core.data.StudyRepository
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.DigestEngine
@@ -65,6 +67,7 @@ private const val ROUTE_MORE = "more"
 private const val ROUTE_RESEARCH = "research"
 private const val ROUTE_PERSONALIZE = "personalize"
 private const val ROUTE_STUDY = "study"
+private const val ROUTE_ROUTINES = "routines"
 private const val ROUTE_LIFE_MAP = "lifemap"
 private const val ROUTE_COMING_SOON = "coming_soon/{slug}"
 
@@ -77,6 +80,7 @@ fun AetherNavHost(
     personalizationRepository: PersonalizationRepository,
     personalizationEngine: PersonalizationEngine,
     studyRepository: StudyRepository,
+    routineRepository: RoutineRepository,
     studyEngine: StudyEngine,
     mindMapEngine: MindMapEngine,
     onDeviceLlm: OnDeviceLlm,
@@ -91,7 +95,7 @@ fun AetherNavHost(
     val factory = remember {
         AetherViewModelFactory(
             repository, goalsRepository, scoringEngine, contextEngine,
-            personalizationRepository, personalizationEngine, studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, alarmPreferences, alarmScheduler
+            personalizationRepository, personalizationEngine, studyRepository, routineRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, alarmPreferences, alarmScheduler
         )
     }
 
@@ -118,9 +122,9 @@ fun AetherNavHost(
         NavHost(
             navController = navController,
             startDestination = ROUTE_DASHBOARD,
-            enterTransition = { fadeIn(tween(260)) + slideInVertically(tween(260)) { it / 30 } },
+            enterTransition = { fadeIn(tween(200)) },
             exitTransition = { fadeOut(tween(120)) },
-            popEnterTransition = { fadeIn(tween(260)) + slideInVertically(tween(260)) { it / 30 } },
+            popEnterTransition = { fadeIn(tween(200)) },
             popExitTransition = { fadeOut(tween(120)) }
         ) {
         composable(ROUTE_DASHBOARD) {
@@ -150,6 +154,10 @@ fun AetherNavHost(
         composable(ROUTE_LIFE_MAP) {
             val viewModel: LifeMapViewModel = viewModel(factory = factory)
             LifeMapScreen(viewModel = viewModel)
+        }
+        composable(ROUTE_ROUTINES) {
+            val viewModel: RoutinesViewModel = viewModel(factory = factory)
+            RoutinesScreen(viewModel = viewModel)
         }
         composable(ROUTE_STUDY) {
             val viewModel: StudyViewModel = viewModel(factory = factory)

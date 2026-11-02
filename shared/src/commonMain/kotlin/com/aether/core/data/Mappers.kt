@@ -3,6 +3,7 @@ package com.aether.core.data
 import com.aether.core.db.BodyLog as BodyLogRow
 import com.aether.core.db.Flashcard as FlashcardRow
 import com.aether.core.db.Notebook as NotebookRow
+import com.aether.core.db.Routine as RoutineRow
 import com.aether.core.db.StudySource as StudySourceRow
 import com.aether.core.db.DailyCheckIn as DailyCheckInRow
 import com.aether.core.db.Goal as GoalRow
@@ -18,6 +19,7 @@ import com.aether.core.model.Goal
 import com.aether.core.model.GoalType
 import com.aether.core.model.JournalEntry
 import com.aether.core.model.Notebook
+import com.aether.core.model.Routine
 import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
 import com.aether.core.model.StudySource
@@ -121,4 +123,15 @@ internal fun FlashcardRow.toDomain() = Flashcard(
     repetitions = repetitions.toInt(),
     dueAt = dueAt,
     createdAt = createdAt
+)
+
+internal fun RoutineRow.toDomain() = Routine(
+    id = id,
+    title = title,
+    domain = domain,
+    minutes = minutes.toInt(),
+    daysMask = daysMask.toInt(),
+    fixedStartMinute = fixedStartMinute?.toInt(),
+    createdAt = createdAt,
+    archived = archived == 1L
 )

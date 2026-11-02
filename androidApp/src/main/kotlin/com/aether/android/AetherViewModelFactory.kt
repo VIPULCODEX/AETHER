@@ -14,12 +14,14 @@ import com.aether.android.ui.gym.GymViewModel
 import com.aether.android.ui.journal.JournalViewModel
 import com.aether.android.ui.mindmap.LifeMapViewModel
 import com.aether.android.ui.personalize.PersonalizeViewModel
+import com.aether.android.ui.routines.RoutinesViewModel
 import com.aether.android.ui.research.ResearchViewModel
 import com.aether.android.ui.settings.SettingsViewModel
 import com.aether.android.ui.study.StudyViewModel
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.PersonalizationRepository
+import com.aether.core.data.RoutineRepository
 import com.aether.core.data.StudyRepository
 import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.DigestEngine
@@ -37,6 +39,7 @@ class AetherViewModelFactory(
     private val personalizationRepository: PersonalizationRepository,
     private val personalizationEngine: PersonalizationEngine,
     private val studyRepository: StudyRepository,
+    private val routineRepository: RoutineRepository,
     private val studyEngine: StudyEngine,
     private val mindMapEngine: MindMapEngine,
     private val onDeviceLlm: OnDeviceLlm,
@@ -52,7 +55,7 @@ class AetherViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         return when (modelClass) {
             DashboardViewModel::class.java ->
-                DashboardViewModel(repository, goalsRepository, scoringEngine, contextEngine, personalizationRepository, personalizationEngine) as T
+                DashboardViewModel(repository, goalsRepository, scoringEngine, contextEngine, personalizationRepository, personalizationEngine, routineRepository) as T
 
             JournalViewModel::class.java ->
                 JournalViewModel(repository) as T
@@ -77,6 +80,9 @@ class AetherViewModelFactory(
 
             LifeMapViewModel::class.java ->
                 LifeMapViewModel(goalsRepository, mindMapEngine) as T
+
+            RoutinesViewModel::class.java ->
+                RoutinesViewModel(routineRepository, repository, goalsRepository, personalizationRepository, personalizationEngine, alarmScheduler) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

@@ -71,7 +71,7 @@ fun AetherButton(
     accentColor: Color = AetherSky
 ) {
     AetherButton(onClick = onClick, modifier = modifier, enabled = enabled, accentColor = accentColor) {
-        Text(text)
+        Text(text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }
 
@@ -88,6 +88,6 @@ fun AetherOutlinedButton(
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = AetherTextPrimary)
     ) {
-        Text(text)
+        Text(text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }

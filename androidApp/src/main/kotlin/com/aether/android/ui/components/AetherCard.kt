@@ -33,7 +33,10 @@ fun AetherCard(
     Column(
         modifier = modifier
             .then(clickable)
-            .background(color = AetherSurface1, shape = RoundedCornerShape(20.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(AetherSurface1, AetherSurface1.copy(alpha = 0.86f))),
+                shape = RoundedCornerShape(20.dp)
+            )
             .border(BorderStroke(1.dp, AetherBorder), shape = RoundedCornerShape(20.dp))
             .padding(contentPadding),
         content = content

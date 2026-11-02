@@ -22,7 +22,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Science
@@ -101,6 +105,8 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            item { TodayCard(state, viewModel, onNavigate) }
 
             state.lifeVisionProgress?.let { progress ->
                 item {
@@ -240,9 +246,9 @@ private fun ModuleRow(
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                Text(title, style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.width(8.dp))
             Icon(
@@ -379,4 +385,55 @@ private fun trendCaption(delta: Int): String = when {
     delta > 0 -> "More consistent than last week."
     delta < 0 -> "Quieter than last week — today is a clean start."
     else -> "Steady with last week."
+}
+
+/** Today's routines with one-tap ticks, plus the streak they feed. */
+@Composable
+private fun TodayCard(state: DashboardUiState, vm: DashboardViewModel, onNavigate: (String) -> Unit) {
+    val done = state.todayRoutines.count { it.done }
+    val total = state.todayRoutines.size
+    AetherCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Today", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+                Text(
+                    if (total == 0) "No routines yet" else "$done of $total done",
+                    style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary, maxLines = 1
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text("${state.streak.current}-day streak", style = MaterialTheme.typography.labelLarge, color = AetherFlame, maxLines = 1)
+                Text("best ${state.streak.best} · ${state.streak.last7}/7 this week", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, maxLines = 1)
+            }
+        }
+        if (total == 0) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Add your daily work and fixed commitments. AETHER plans your timetable around them and tracks your streak.",
+                style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary
+            )
+            Spacer(Modifier.height(10.dp))
+            Text("Add routines", style = MaterialTheme.typography.labelLarge, color = AetherSky, modifier = Modifier.clickable { onNavigate("routines") }.padding(vertical = 4.dp))
+        } else {
+            Spacer(Modifier.height(10.dp))
+            state.todayRoutines.forEach { item ->
+                Row(
+                    Modifier.fillMaxWidth().clickable { vm.toggleRoutine(item.routine.id) }.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        if (item.done) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                        contentDescription = if (item.done) "Done" else "Not done",
+                        tint = if (item.done) AetherEmerald else AetherTextSecondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(item.routine.title, style = MaterialTheme.typography.bodyLarge, color = if (item.done) AetherTextSecondary else AetherTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(item.routine.domain, style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
 }
