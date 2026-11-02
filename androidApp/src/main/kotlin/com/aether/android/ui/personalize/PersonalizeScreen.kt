@@ -154,10 +154,18 @@ fun PersonalizeScreen(viewModel: PersonalizeViewModel) {
                             color = AetherSky,
                             trackColor = AetherSurface2
                         )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "From: ${learned.routineCompletions} routine ticks, ${learned.taskCompletions} finished tasks, ${learned.feedbackEvents} suggestion responses.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AetherTextSecondary
+                        )
                         Spacer(Modifier.height(14.dp))
                         if (learned.insights.isEmpty()) {
                             Text(
-                                "Nothing yet. Complete a few tasks and respond to suggestions. Insights appear once there's enough data to be trustworthy.",
+                                if (learned.routineCompletions + learned.taskCompletions < 5)
+                                    "Tick your routines on Home or finish tasks. After about 5 completions AETHER can spot your peak hours; log energy and sleep on Home to see how rest affects you."
+                                else "Enough to start, but nothing stands out yet. Keep going.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = AetherTextSecondary
                             )

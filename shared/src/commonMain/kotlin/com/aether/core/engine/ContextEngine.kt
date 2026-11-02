@@ -7,6 +7,7 @@ import com.aether.core.model.Goal
 import com.aether.core.model.GoalType
 import com.aether.core.model.Modules
 import com.aether.core.model.PersonalizationPrefs
+import com.aether.core.model.Routine
 import com.aether.core.model.PlanningStyle
 import com.aether.core.model.Task
 import kotlin.math.min
@@ -23,7 +24,9 @@ data class Suggestion(
     val reason: String,
     val taskId: String? = null,
     val goalId: String? = null,
-    val domain: String? = null
+    val domain: String? = null,
+    /** Set when the suggestion is one of today's still-open routines: ticking it is the "done" action. */
+    val routineId: String? = null
 )
 
 data class SuggestionContext(
@@ -34,8 +37,11 @@ data class SuggestionContext(
     val openTasks: List<Task>,
     val prefs: PersonalizationPrefs = PersonalizationPrefs(),
     val learned: LearnedProfile = LearnedProfile.EMPTY,
-    /** Ids (task or goal) the user already said "not now" to this session. */
-    val skipped: Set<String> = emptySet()
+    /** Ids (task, goal or "rt-<routineId>") the user already said "not now" to this session. */
+    val skipped: Set<String> = emptySet(),
+    /** Routines that occur today and haven't been ticked yet. */
+    val pendingRoutines: List<Routine> = emptyList(),
+    val endOfTodayMillis: Long = nowMillis + 12 * 3_600_000L
 )
 
 private const val MILLIS_PER_DAY = 86_400_000.0
@@ -51,7 +57,8 @@ private class Candidate(
     val domain: String,
     val dueDate: Long?,
     val effort: Int,
-    val impact: Int
+    val impact: Int,
+    val routineId: String? = null
 )
 
 class ContextEngine {
@@ -91,11 +98,12 @@ class ContextEngine {
         }.ifBlank { "It's your best open item right now." }
 
         return Suggestion(
-            title = "Work on: ${best.title}",
+            title = if (best.routineId != null) "Do: ${best.title}" else "Work on: ${best.title}",
             reason = reason,
             taskId = best.taskId,
-            goalId = best.goalId,
-            domain = best.domain
+            goalId = if (best.routineId != null) null else best.goalId,
+            domain = best.domain,
+            routineId = best.routineId
         )
     }
 
@@ -115,7 +123,15 @@ class ContextEngine {
             .filter { it.goalType != GoalType.LIFE_VISION && it.id !in goalsWithOpenTasks && it.progress < 1.0 && allowed(it.domain) }
             .map { Candidate(it.id, it.id, null, it.title, it.domain, it.targetDate, it.estimatedEffort ?: 3, it.estimatedImpact ?: 3) }
 
-        return taskCandidates + goalCandidates
+        // A routine still open today is the most concrete thing there is to do, and it carries today's deadline.
+        val routineCandidates = ctx.pendingRoutines
+            .filter { !it.isFixed && allowed(it.domain) }
+            .map { r ->
+                val effort = when { r.minutes >= 90 -> 5; r.minutes >= 60 -> 4; r.minutes >= 30 -> 3; else -> 2 }
+                Candidate("rt-${r.id}", r.id, null, r.title, r.domain, ctx.endOfTodayMillis, effort, 4, routineId = r.id)
+            }
+
+        return taskCandidates + goalCandidates + routineCandidates
     }
 
     private fun factorsFor(c: Candidate, ctx: SuggestionContext, energy: Int): List<Factor> {
@@ -129,6 +145,7 @@ class ContextEngine {
             val daysLeft = (due - ctx.nowMillis) / MILLIS_PER_DAY
             val urgency = if (daysLeft <= 0) 1.0 else 1.0 / (1.0 + daysLeft)
             val phrase = when {
+                c.routineId != null -> "Daily routine, still open today"
                 daysLeft <= 0 -> "Overdue"
                 daysLeft < 1 -> "Due today"
                 else -> "Due in ${daysLeft.toInt()} day${if (daysLeft.toInt() == 1) "" else "s"}"

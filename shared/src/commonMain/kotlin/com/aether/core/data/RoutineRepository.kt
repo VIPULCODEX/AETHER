@@ -30,13 +30,13 @@ class RoutineRepository(private val database: AetherDatabase) {
 
     fun observeLogsSince(date: String): Flow<List<RoutineLog>> =
         q.selectRoutineLogsSince(date).asFlow().mapToList(Dispatchers.Default)
-            .map { rows -> rows.map { RoutineLog(it.routineId, it.date) } }
+            .map { rows -> rows.map { RoutineLog(it.routineId, it.date, it.completedAt) } }
 
     /** Every date with at least one completed routine, for streaks. */
     fun observeLogDates(): Flow<Set<String>> =
         q.selectRoutineLogDates().asFlow().mapToList(Dispatchers.Default).map { it.toSet() }
 
     suspend fun setDone(routineId: String, date: String, done: Boolean) {
-        if (done) q.insertRoutineLog(routineId, date) else q.deleteRoutineLog(routineId, date)
+        if (done) q.insertRoutineLog(routineId, date, currentTimeMillis()) else q.deleteRoutineLog(routineId, date)
     }
 }

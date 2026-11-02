@@ -73,7 +73,7 @@ class AetherViewModelFactory(
                 ResearchViewModel(repository) as T
 
             PersonalizeViewModel::class.java ->
-                PersonalizeViewModel(repository, goalsRepository, personalizationRepository, personalizationEngine) as T
+                PersonalizeViewModel(repository, goalsRepository, personalizationRepository, personalizationEngine, routineRepository) as T
 
             StudyViewModel::class.java ->
                 StudyViewModel(studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine) as T

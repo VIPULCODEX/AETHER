@@ -23,4 +23,5 @@ data class Routine(
 }
 
 /** A routine ticked off on a given local date (yyyy-MM-dd). */
-data class RoutineLog(val routineId: String, val date: String)
+/** [completedAt] (epoch ms) is what lets AETHER learn *when* you actually do things; older rows may lack it. */
+data class RoutineLog(val routineId: String, val date: String, val completedAt: Long? = null)

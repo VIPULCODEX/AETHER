@@ -5,6 +5,8 @@ import com.aether.core.model.BehaviorEventType
 import com.aether.core.model.Chronotype
 import com.aether.core.model.DailyCheckIn
 import com.aether.core.model.Goal
+import com.aether.core.model.Routine
+import com.aether.core.model.RoutineLog
 import com.aether.core.model.Task
 import kotlin.math.min
 import kotlin.math.pow
@@ -34,7 +36,11 @@ data class LearnedProfile(
     val peakWindowHours: Int,
     val chronotype: Chronotype?,
     val domainStats: Map<String, DomainStat>,
-    val insights: List<String>
+    val insights: List<String>,
+    /** Where the observations came from, so the user can see what AETHER is actually learning from. */
+    val taskCompletions: Int = 0,
+    val routineCompletions: Int = 0,
+    val feedbackEvents: Int = 0
 ) {
     fun isPeakHour(hour: Int): Boolean {
         val start = peakStartHour ?: return false
@@ -44,6 +50,31 @@ data class LearnedProfile(
     companion object {
         val EMPTY = LearnedProfile(0, 0.0, null, PEAK_WINDOW_HOURS, null, emptyMap(), emptyList())
     }
+}
+
+/** What routine ticks tell the learner: timed completions, and how many were scheduled vs done per domain recently. */
+data class RoutineSignals(
+    val completions: List<Pair<String, Long>>,
+    val scheduledByDomain: Map<String, Int>,
+    val doneByDomain: Map<String, Int>
+) {
+    companion object { val NONE = RoutineSignals(emptyList(), emptyMap(), emptyMap()) }
+}
+
+/** Routine ticks and misses over the last [windowDays] days, from routines and their logs. */
+fun routineSignals(routines: List<Routine>, logs: List<RoutineLog>, todayIso: String, windowDays: Int = 14): RoutineSignals {
+    val today = StreakEngine.epochDay(todayIso) ?: return RoutineSignals.NONE
+    val byId = routines.associateBy { it.id }
+    val scheduled = HashMap<String, Int>()
+    for (back in 0 until windowDays) {
+        val dow = (((today - back) + 3) % 7).toInt() // 1970-01-01 was a Thursday; Monday = 0
+        routines.filter { !it.isFixed && it.occursOn(dow) }.forEach { scheduled.merge(it.domain, 1, Int::plus) }
+    }
+    val recent = logs.filter { l -> StreakEngine.epochDay(l.date)?.let { today - it in 0 until windowDays } == true }
+    val done = HashMap<String, Int>()
+    recent.forEach { l -> byId[l.routineId]?.takeIf { !it.isFixed }?.let { done.merge(it.domain, 1, Int::plus) } }
+    val completions = logs.mapNotNull { l -> l.completedAt?.let { t -> byId[l.routineId]?.let { it.domain to t } } }
+    return RoutineSignals(completions, scheduled, done)
 }
 
 const val PEAK_WINDOW_HOURS = 3
@@ -67,10 +98,12 @@ class PersonalizationEngine {
         checkIns: List<DailyCheckIn>,
         events: List<BehaviorEvent>,
         nowMillis: Long,
-        hourOf: (Long) -> Int
+        hourOf: (Long) -> Int,
+        routineSignals: RoutineSignals = RoutineSignals.NONE
     ): LearnedProfile {
         val completions = tasks.filter { it.isDone && it.completedAt != null }
-        val observations = completions.size + events.size
+        val timedCount = completions.size + routineSignals.completions.size
+        val observations = timedCount + events.size
         val confidence = min(1.0, observations.toDouble() / FULL_CONFIDENCE_OBSERVATIONS)
 
         val histogram = DoubleArray(24)
@@ -79,19 +112,23 @@ class PersonalizationEngine {
             val ageDays = ((nowMillis - at) / MILLIS_PER_DAY).coerceAtLeast(0.0)
             histogram[hourOf(at).coerceIn(0, 23)] += 0.5.pow(ageDays / RECENCY_HALF_LIFE_DAYS)
         }
-        val peakStart = if (completions.size >= MIN_COMPLETIONS_FOR_PEAK) bestWindowStart(histogram) else null
+        routineSignals.completions.forEach { (_, at) ->
+            val ageDays = ((nowMillis - at) / MILLIS_PER_DAY).coerceAtLeast(0.0)
+            histogram[hourOf(at).coerceIn(0, 23)] += 0.5.pow(ageDays / RECENCY_HALF_LIFE_DAYS)
+        }
+        val peakStart = if (timedCount >= MIN_COMPLETIONS_FOR_PEAK) bestWindowStart(histogram) else null
         val chronotype = peakStart?.let { chronotypeFor((it + PEAK_WINDOW_HOURS / 2) % 24) }
 
         val domainByGoal = goals.associate { it.id to it.domain }
         val taskDomains = tasks.groupBy { domainByGoal[it.goalId] }.filterKeys { it != null }
-        val domains = (taskDomains.keys.filterNotNull() + events.mapNotNull { it.domain }).toSortedSet()
+        val domains = (taskDomains.keys.filterNotNull() + events.mapNotNull { it.domain } + routineSignals.scheduledByDomain.keys).toSortedSet()
         val domainStats = domains.associateWith { domain ->
             val domainTasks = taskDomains[domain].orEmpty()
             val domainEvents = events.filter { it.domain == domain }
             DomainStat(
                 domain = domain,
-                tasksDone = domainTasks.count { it.isDone },
-                tasksTotal = domainTasks.size,
+                tasksDone = domainTasks.count { it.isDone } + (routineSignals.doneByDomain[domain] ?: 0),
+                tasksTotal = domainTasks.size + (routineSignals.scheduledByDomain[domain] ?: 0),
                 suggestionsAccepted = domainEvents.count { it.type == BehaviorEventType.SUGGESTION_ACCEPTED },
                 suggestionsDismissed = domainEvents.count { it.type == BehaviorEventType.SUGGESTION_DISMISSED }
             )
@@ -104,7 +141,10 @@ class PersonalizationEngine {
             peakWindowHours = PEAK_WINDOW_HOURS,
             chronotype = chronotype,
             domainStats = domainStats,
-            insights = buildInsights(peakStart, chronotype, domainStats, checkIns)
+            insights = buildInsights(peakStart, chronotype, domainStats, checkIns),
+            taskCompletions = completions.size,
+            routineCompletions = routineSignals.completions.size,
+            feedbackEvents = events.size
         )
     }
 
