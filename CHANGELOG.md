@@ -4,6 +4,27 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.17.0] - 2026-11-03
+
+### Added
+- Study Hub "Notes" tab: a document-to-notes pipeline. PDFs now keep page
+  numbers; text is split by headings; each section becomes structured notes
+  (summary, definitions, formulas, traps, example, flow) using only that
+  section's text; every number, formula and definition is then checked against
+  the source pages and flagged when unsupported; sections merge into detailed
+  notes plus a one-page revision sheet with a hard 2800-character cap.
+- Optional "Deep notes": your own Claude API key (Settings) extracts notes per
+  section in the cloud. No model name is built into the app; it is picked from
+  the list your key can use, and re-picked if one is retired. Falls back to
+  on-device extraction per section if a call fails.
+- Error notebook ("Errors" tab): wrong Practice and Quiz answers are saved with
+  their topic and resurface after 1, 3, 7 and 21 days until answered right.
+- Dashboard "Study progress" card: cards due, share of cards that have stuck,
+  mistakes to redo, and weakest topics.
+
+### Changed
+- Database schema v10 (adds the error notebook table).
+
 ## [0.16.0] - 2026-11-02
 
 ### Added

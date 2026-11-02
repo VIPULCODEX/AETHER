@@ -2,6 +2,8 @@ package com.aether.android.ui.study
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aether.android.data.ApiKeyStore
+import com.aether.android.data.ClaudeNotesClient
 import com.aether.android.data.LlmStatus
 import com.aether.android.data.OnDeviceLlm
 import com.aether.android.data.ShareInbox
@@ -17,6 +19,8 @@ import com.aether.core.engine.DigestEngine
 import com.aether.core.engine.ExamEngine
 import com.aether.core.engine.Grade
 import com.aether.core.engine.MindMapEngine
+import com.aether.core.engine.NotesPipeline
+import com.aether.core.engine.StructuredNote
 import com.aether.core.engine.PracticeQuestion
 import com.aether.core.engine.QuizQuestion
 import com.aether.core.engine.SpacedRepetition
@@ -24,8 +28,11 @@ import com.aether.core.engine.StudyAnswer
 import com.aether.core.engine.StudyEngine
 import com.aether.core.model.Flashcard
 import com.aether.core.model.Notebook
+import com.aether.core.model.StudyMistake
 import com.aether.core.model.StudySource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +44,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 enum class StudyTab(val label: String) {
-    SOURCES("Sources"), ASK("Ask"), DIGEST("Digest"), PRACTICE("Practice"), MAP("Map"), CARDS("Cards"), QUIZ("Quiz")
+    SOURCES("Sources"), ASK("Ask"), DIGEST("Digest"), NOTES("Notes"), PRACTICE("Practice"), MAP("Map"), CARDS("Cards"), QUIZ("Quiz"), ERRORS("Errors")
 }
 
 data class ChatTurn(val question: String, val answer: StudyAnswer)
@@ -66,10 +73,17 @@ data class StudyUiState(
     val readerOpen: Boolean = false,
     val readerBusy: Boolean = false,
     val readerUrl: String = "",
-    val playing: StudySource? = null
+    val playing: StudySource? = null,
+    val notes: List<StructuredNote> = emptyList(),
+    val notesSourceId: String? = null,
+    val notesBusy: String? = null,
+    val notesDeep: Boolean = false,
+    val practiceTopic: String = ""
 ) {
     val dueCards: List<Flashcard> get() = cards.filter { it.dueAt <= System.currentTimeMillis() }
 }
+
+private const val MAX_DEEP_CHUNKS = 40
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StudyViewModel(
@@ -79,8 +93,32 @@ class StudyViewModel(
     private val llm: OnDeviceLlm,
     private val digestEngine: DigestEngine,
     private val examEngine: ExamEngine,
-    private val personalizationRepository: PersonalizationRepository
+    private val personalizationRepository: PersonalizationRepository,
+    private val apiKeyStore: ApiKeyStore,
+    private val claude: ClaudeNotesClient
 ) : ViewModel() {
+
+    val mistakes: StateFlow<List<StudyMistake>> = repository.observeMistakes()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Keeps a wrong answer in the error notebook, tagged by topic, so it resurfaces on a spaced schedule. */
+    fun recordMistake(topic: String, question: String, correct: String, yours: String) {
+        val nb = selectedId.value ?: return
+        viewModelScope.launch {
+            repository.recordMistake(nb, topic.ifBlank { uiState.value.selected?.title ?: "General" }, question, correct, yours)
+            recordStudyActivity()
+        }
+    }
+
+    fun reviewMistake(m: StudyMistake, gotItRight: Boolean) {
+        viewModelScope.launch { repository.reviewMistake(m, gotItRight) }
+    }
+
+    fun deleteMistake(id: String) {
+        viewModelScope.launch { repository.deleteMistake(id) }
+    }
+
+    val hasClaudeKey: Boolean get() = apiKeyStore.getClaudeKey() != null
 
     val llmStatus: StateFlow<LlmStatus> = llm.status
     val modelBytes: Long get() = llm.modelBytes
@@ -106,7 +144,12 @@ class StudyViewModel(
         val readerOpen: Boolean = false,
         val readerBusy: Boolean = false,
         val readerUrl: String = "",
-        val playingId: String? = null
+        val playingId: String? = null,
+        val practiceTopic: String = "",
+        val notes: List<StructuredNote> = emptyList(),
+        val notesSourceId: String? = null,
+        val notesBusy: String? = null,
+        val notesDeep: Boolean = false
     )
 
     private val data = selectedId.flatMapLatest { id ->
@@ -123,7 +166,8 @@ class StudyViewModel(
             tab = l.tab, chat = l.chat, digest = l.digest, digestSourceId = l.digestSourceId, explanations = l.explanations,
             practice = l.practice, practiceMessage = l.practiceMessage, showAnswer = l.showAnswer, quiz = l.quiz,
             thinking = l.thinking, notice = l.notice, readerOpen = l.readerOpen, readerBusy = l.readerBusy, readerUrl = l.readerUrl,
-            playing = sources.find { it.id == l.playingId }
+            playing = sources.find { it.id == l.playingId },
+            notes = l.notes, notesSourceId = l.notesSourceId, notesBusy = l.notesBusy, notesDeep = l.notesDeep, practiceTopic = l.practiceTopic
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StudyUiState())
 
@@ -189,6 +233,42 @@ class StudyViewModel(
     fun saveExamNotes(notes: String) {
         val id = selectedId.value ?: return
         viewModelScope.launch { repository.setExamNotes(id, notes) }
+    }
+
+    // ---- structured notes ---------------------------------------------------
+    /**
+     * Source -> page-aware chunks -> structured notes -> verified against the source pages -> merged. On-device rules
+     * by default; with [deep] each chunk goes to the user's own Claude key. A cloud failure on one chunk falls back
+     * to the rules for that chunk, so a flaky network never loses the whole run.
+     */
+    fun buildNotes(sourceId: String, deep: Boolean) {
+        val src = uiState.value.sources.find { it.id == sourceId } ?: return
+        val key = if (deep) apiKeyStore.getClaudeKey() else null
+        if (deep && key == null) { report("Add your Claude API key in Settings first."); return }
+        viewModelScope.launch {
+            local.value = local.value.copy(notesSourceId = sourceId, notesBusy = "Reading pages...", notesDeep = deep, notes = emptyList(), notice = null)
+            val (notes, cloudErrors) = withContext(Dispatchers.Default) {
+                val chunks = NotesPipeline.chunk(NotesPipeline.pagesFromContent(src.content)).let { if (deep) it.take(MAX_DEEP_CHUNKS) else it }
+                var errors = 0
+                var lastError: String? = null
+                val extracted = chunks.mapIndexed { i, c ->
+                    local.value = local.value.copy(notesBusy = "Section ${i + 1} of ${chunks.size}: ${c.heading.take(30)}")
+                    if (key == null) NotesPipeline.extractRules(c)
+                    else withContext(Dispatchers.IO) { runCatching { claude.extract(key, c) } }
+                        .getOrElse { errors++; lastError = it.message; NotesPipeline.extractRules(c) }
+                }
+                NotesPipeline.merge(NotesPipeline.verifyAll(extracted, chunks)) to (errors to lastError)
+            }
+            val (errors, lastError) = cloudErrors
+            local.value = local.value.copy(
+                notes = notes, notesBusy = null,
+                notice = when {
+                    notes.isEmpty() -> "No sections found. Notes need a source with some structure (headings)."
+                    errors > 0 -> "$errors section(s) used on-device extraction because the cloud call failed: $lastError"
+                    else -> null
+                }
+            )
+        }
     }
 
     // ---- sources & reader --------------------------------------------------
@@ -303,7 +383,7 @@ class StudyViewModel(
     fun generatePractice(topic: String) {
         if (local.value.thinking) return
         val chunks = engine.chunk(uiState.value.sources)
-        local.value = local.value.copy(thinking = true, practice = null, practiceMessage = null)
+        local.value = local.value.copy(thinking = true, practice = null, practiceMessage = null, practiceTopic = topic)
         viewModelScope.launch {
             val questions = examEngine.practice(chunks, topic, uiState.value.selected?.examNotes, llm)
             local.value = local.value.copy(
@@ -347,7 +427,9 @@ class StudyViewModel(
         val quiz = local.value.quiz ?: return
         if (quiz.picked != null || quiz.finished) return
         viewModelScope.launch { recordStudyActivity() }
-        val correct = quiz.questions[quiz.index].correctIndex == index
+        val q = quiz.questions[quiz.index]
+        val correct = q.correctIndex == index
+        if (!correct) recordMistake("", q.prompt, q.options[q.correctIndex], q.options.getOrElse(index) { "" })
         local.value = local.value.copy(quiz = quiz.copy(picked = index, score = quiz.score + if (correct) 1 else 0))
     }
 

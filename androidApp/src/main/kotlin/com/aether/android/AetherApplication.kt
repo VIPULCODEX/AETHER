@@ -58,6 +58,7 @@ class AetherApplication : Application() {
     val digestEngine = DigestEngine(studyEngine)
     val examEngine = ExamEngine(studyEngine)
     val groqScheduleClient = GroqScheduleClient()
+    val claudeNotesClient = com.aether.android.data.ClaudeNotesClient()
 
     /** A loaded LLM holds hundreds of MB; give it back as soon as the app is in the background and memory is tight. */
     override fun onTrimMemory(level: Int) {

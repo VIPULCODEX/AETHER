@@ -6,7 +6,9 @@ import com.aether.core.db.AetherDatabase
 import com.aether.core.engine.CardDraft
 import com.aether.core.engine.Schedule
 import com.aether.core.model.Flashcard
+import com.aether.core.engine.ProgressEngine
 import com.aether.core.model.Notebook
+import com.aether.core.model.StudyMistake
 import com.aether.core.model.StudySource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +34,7 @@ class StudyRepository(private val database: AetherDatabase) {
     suspend fun deleteNotebook(id: String) {
         q.transaction {
             q.deleteFlashcardsForNotebook(id)
+            q.deleteMistakesForNotebook(id)
             q.deleteSourcesForNotebook(id)
             q.deleteNotebook(id)
         }
@@ -91,5 +94,28 @@ class StudyRepository(private val database: AetherDatabase) {
 
     suspend fun applySchedule(cardId: String, schedule: Schedule) {
         q.updateFlashcardSchedule(schedule.ease, schedule.intervalDays.toLong(), schedule.repetitions.toLong(), schedule.dueAt, cardId)
+    }
+
+    // ---- error notebook ------------------------------------------------------
+    fun observeMistakes(): Flow<List<StudyMistake>> =
+        q.selectAllMistakes().asFlow().mapToList(Dispatchers.Default).map { rows -> rows.map { it.toDomain() } }
+
+    fun observeAllCards(): Flow<List<Flashcard>> =
+        q.selectAllFlashcards().asFlow().mapToList(Dispatchers.Default).map { rows -> rows.map { it.toDomain() } }
+
+    suspend fun recordMistake(notebookId: String, topic: String, question: String, correct: String, yours: String) {
+        val now = currentTimeMillis()
+        q.insertMistake(generateId(), notebookId, topic.trim().ifBlank { "General" }, question.trim(), correct.trim(), yours.trim(), now, ProgressEngine.nextMistakeDue(now, 0))
+    }
+
+    /** Answering a revisited mistake right pushes it out; wrong resets it to tomorrow. Enough right answers resolves it. */
+    suspend fun reviewMistake(m: StudyMistake, gotItRight: Boolean) {
+        val now = currentTimeMillis()
+        val count = if (gotItRight) m.reviewCount + 1 else 0
+        q.updateMistakeReview(count.toLong(), ProgressEngine.nextMistakeDue(now, count), if (count >= ProgressEngine.RESOLVE_AFTER) 1L else 0L, m.id)
+    }
+
+    suspend fun deleteMistake(id: String) {
+        q.deleteMistake(id)
     }
 }

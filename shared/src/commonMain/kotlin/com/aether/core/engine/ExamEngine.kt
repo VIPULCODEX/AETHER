@@ -11,6 +11,12 @@ data class PracticeQuestion(
     val numeric: Double?,
     val explanation: String
 ) {
+    /** The correct answer as text, for the error notebook. */
+    fun answerText(): String = when (type) {
+        QuestionType.NAT -> numeric?.toString() ?: ""
+        else -> correct.sorted().joinToString(", ") { i -> "${'A' + i}) ${options.getOrElse(i) { "" }}" }
+    }
+
     /** MSQ is all-or-nothing, as in the real exam; NAT allows a small rounding tolerance. */
     fun isCorrect(selected: Set<Int>, typed: Double?): Boolean = when (type) {
         QuestionType.MCQ, QuestionType.MSQ -> selected == correct

@@ -22,7 +22,16 @@ class ApiKeyStore(context: Context) {
         }.apply()
     }
 
+    fun getClaudeKey(): String? = prefs.getString(KEY_CLAUDE, null)?.takeIf { it.isNotBlank() }
+
+    fun setClaudeKey(key: String?) {
+        prefs.edit().apply {
+            if (key.isNullOrBlank()) remove(KEY_CLAUDE) else putString(KEY_CLAUDE, key.trim())
+        }.apply()
+    }
+
     private companion object {
         const val KEY_GROQ = "groq_api_key"
+        const val KEY_CLAUDE = "claude_api_key"
     }
 }

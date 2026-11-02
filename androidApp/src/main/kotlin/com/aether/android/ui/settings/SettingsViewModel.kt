@@ -35,6 +35,19 @@ class SettingsViewModel(
         _apiKey.value = ""
     }
 
+    private val _claudeKey = MutableStateFlow(apiKeyStore.getClaudeKey() ?: "")
+    val claudeKey: StateFlow<String> = _claudeKey.asStateFlow()
+
+    fun saveClaude(key: String) {
+        apiKeyStore.setClaudeKey(key)
+        _claudeKey.value = apiKeyStore.getClaudeKey() ?: ""
+    }
+
+    fun clearClaude() {
+        apiKeyStore.setClaudeKey(null)
+        _claudeKey.value = ""
+    }
+
     fun testNotificationNow() = alarmScheduler.fireTest(0)
 
     fun testAlarmIn(seconds: Int) = alarmScheduler.fireTest(seconds)

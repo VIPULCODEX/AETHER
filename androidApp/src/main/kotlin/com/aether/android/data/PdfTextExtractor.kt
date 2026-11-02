@@ -19,7 +19,13 @@ object PdfTextExtractor {
             val stream = context.contentResolver.openInputStream(uri) ?: error("Couldn't open the PDF")
             stream.use { input ->
                 PDDocument.load(input).use { doc ->
-                    val text = PDFTextStripper().getText(doc).replace(Regex("[ \\t]+\\n"), "\n").trim()
+                    // One form feed between pages so notes can cite page numbers; other consumers treat it as whitespace.
+                    val stripper = PDFTextStripper()
+                    val text = (1..doc.numberOfPages).joinToString("\u000c") { page ->
+                        stripper.startPage = page
+                        stripper.endPage = page
+                        stripper.getText(doc).replace(Regex("[ \\t]+\\n"), "\n").trim()
+                    }.trim('\u000c', ' ', '\n')
                     require(text.isNotBlank()) { "This PDF has no selectable text (it looks scanned)." }
                     text.take(MAX_CHARS)
                 }
