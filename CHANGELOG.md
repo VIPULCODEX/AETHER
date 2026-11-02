@@ -4,6 +4,24 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.15.1] - 2026-11-02
+
+### Fixed
+- "What AETHER has learned" stayed at 0 observations: it only learned from
+  finished goal-tasks and suggestion responses, while daily use happens through
+  routines. Routine ticks now carry a timestamp (migration 7.sqm) and feed the
+  learner: peak hours, follow-through per domain (done vs scheduled over the
+  last 14 days), and the observation count. The Personalize screen shows
+  exactly where observations come from and what's needed for the first insight.
+
+### Added
+- Home: log today's energy (1-5) and last night's sleep. Energy drives what the
+  Context Engine suggests right now, and energy + sleep together let AETHER
+  learn how rest affects you.
+- Suggestions now include today's still-open routines ("Do: GATE revision.
+  Daily routine, still open today, your peak window"). One tap on the card
+  ticks the routine; "Not now" moves to the next best item.
+
 ## [0.15.0] - 2026-11-02
 
 ### Added

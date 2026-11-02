@@ -10,6 +10,7 @@ import com.aether.core.engine.ContextEngine
 import com.aether.core.engine.LearnedProfile
 import com.aether.core.engine.PersonalizationEngine
 import com.aether.core.engine.StreakEngine
+import com.aether.core.engine.routineSignals
 import com.aether.core.engine.StreakStats
 import com.aether.core.engine.SuggestionContext
 import com.aether.core.engine.LifeScoreBreakdown
@@ -39,6 +40,8 @@ data class TodayRoutine(val routine: Routine, val done: Boolean)
 
 data class DashboardUiState(
     val todayRoutines: List<TodayRoutine> = emptyList(),
+    val energyToday: Int? = null,
+    val sleepToday: Double? = null,
     val streak: StreakStats = StreakStats(0, 0, 0, false),
     val lifeScore: LifeScoreBreakdown = LifeScoreBreakdown(0, 0, 0, 0),
     val suggestion: Suggestion? = null,
@@ -102,7 +105,7 @@ class DashboardViewModel(
                 skipped
             ) { prefs, events, skippedIds -> Personal(prefs, events, skippedIds) }
 
-            val since = LocalDate.now().minusDays(7).toString()
+            val since = LocalDate.now().minusDays(30).toString()
             val routineData = combine(
                 routineRepository.observeRoutines(),
                 routineRepository.observeLogsSince(since),
@@ -122,8 +125,15 @@ class DashboardViewModel(
                     val lifeVisionProgress = scoringEngine.computeLifeVisionProgress(goals, tasks)
                     val hour = LocalTime.now().hour
                     val nowMillis = System.currentTimeMillis()
+                    val todayDate = LocalDate.now()
+                    val todayIso = todayDate.toString()
+                    val todayDow = todayDate.dayOfWeek.value - 1
+                    val doneToday = routineInfo.logs.filter { it.date == todayIso }.map { it.routineId }.toSet()
+                    latestTodayRoutines = routineInfo.routines.filter { it.occursOn(todayDow) }
+                    latestDoneToday = doneToday
+                    val signals = routineSignals(routineInfo.routines, routineInfo.logs, todayIso)
                     val learned = if (personalData.prefs.learningEnabled) {
-                        personalizationEngine.learn(tasks, goals, checkIns, personalData.events, nowMillis, ::hourOf)
+                        personalizationEngine.learn(tasks, goals, checkIns, personalData.events, nowMillis, ::hourOf, signals)
                     } else {
                         LearnedProfile.EMPTY
                     }
@@ -136,11 +146,12 @@ class DashboardViewModel(
                             openTasks = tasks.filter { !it.isDone },
                             prefs = personalData.prefs,
                             learned = learned,
-                            skipped = personalData.skipped
+                            skipped = personalData.skipped,
+                            pendingRoutines = latestTodayRoutines.filter { it.id !in doneToday },
+                            endOfTodayMillis = todayDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         )
                     )
 
-                    val todayDate = LocalDate.now()
                     val weekStrip = (6 downTo 0).map { offset ->
                         val date = todayDate.minusDays(offset.toLong()).toString()
                         checkIns.find { it.date == date }?.executedMission == true
@@ -151,16 +162,13 @@ class DashboardViewModel(
                         checkIns.find { it.date == date }?.executedMission == true
                     }
 
-                    val todayIso = todayDate.toString()
-                    val todayDow = todayDate.dayOfWeek.value - 1
-                    val doneToday = routineInfo.logs.filter { it.date == todayIso }.map { it.routineId }.toSet()
-                    latestTodayRoutines = routineInfo.routines.filter { it.occursOn(todayDow) }
-                    latestDoneToday = doneToday
                     val taskDates = tasks.mapNotNull { t -> t.completedAt?.takeIf { t.isDone }?.let { isoDate(it) } }
                     val activeDates = routineInfo.logDates + taskDates + checkIns.filter { it.executedMission }.map { it.date }
                     val streak = StreakEngine.compute(activeDates.toSet(), todayIso)
 
                     _uiState.value = DashboardUiState(
+                        energyToday = todayCheckIn?.energy,
+                        sleepToday = todayCheckIn?.sleepHours,
                         todayRoutines = latestTodayRoutines.map { TodayRoutine(it, it.id in doneToday) },
                         streak = streak,
                         lifeScore = lifeScore,
@@ -200,6 +208,32 @@ class DashboardViewModel(
         }
     }
 
+    /** One tap on the suggestion card: ticks the routine it names, or marks the mission done for tasks/goals. */
+    fun completeSuggestion() {
+        val routineId = _uiState.value.suggestion?.routineId
+        if (routineId != null && routineId !in latestDoneToday) {
+            toggleRoutine(routineId)
+            viewModelScope.launch { recordFeedback(BehaviorEventType.SUGGESTION_ACCEPTED) }
+        } else {
+            toggleMissionDone()
+        }
+    }
+
+    /** Today's energy (1-5): the single most useful input for "what should I do now?". */
+    fun setEnergy(level: Int) = updateCheckIn { it.copy(energy = level) }
+
+    /** Last night's sleep in hours; lets AETHER learn how sleep affects your energy. */
+    fun setSleep(hours: Double) = updateCheckIn { it.copy(sleepHours = hours.coerceIn(0.0, 14.0)) }
+
+    private fun updateCheckIn(change: (DailyCheckIn) -> DailyCheckIn) {
+        viewModelScope.launch {
+            val today = LocalDate.now().toString()
+            val current = latestCheckIns.find { it.date == today } ?: DailyCheckIn(today, null, null, null, false)
+            val updated = change(current)
+            repository.upsertTodayCheckIn(today, updated.mood, updated.energy, updated.sleepHours, updated.executedMission)
+        }
+    }
+
     /** Ticks (or unticks) a routine for today. Finishing every routine for the day also counts as today's mission. */
     fun toggleRoutine(routineId: String) {
         viewModelScope.launch {
@@ -217,7 +251,7 @@ class DashboardViewModel(
     /** "Not now": remember the rejection (so similar suggestions get rarer) and surface the next-best item. */
     fun dismissSuggestion() {
         val suggestion = _uiState.value.suggestion ?: return
-        val id = suggestion.taskId ?: suggestion.goalId ?: return
+        val id = suggestion.routineId?.let { "rt-$it" } ?: suggestion.taskId ?: suggestion.goalId ?: return
         skipped.value = skipped.value + id
         viewModelScope.launch { recordFeedback(BehaviorEventType.SUGGESTION_DISMISSED) }
     }

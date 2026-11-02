@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.PersonalizationRepository
+import com.aether.core.data.RoutineRepository
 import com.aether.core.engine.LearnedProfile
 import com.aether.core.engine.PersonalizationEngine
+import com.aether.core.engine.routineSignals
 import com.aether.core.model.Chronotype
 import com.aether.core.model.CoachTone
 import com.aether.core.model.Persona
@@ -20,6 +22,14 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 
+private data class Inputs(
+    val prefs: PersonalizationPrefs,
+    val events: List<com.aether.core.model.BehaviorEvent>,
+    val goals: List<com.aether.core.model.Goal>,
+    val tasks: List<com.aether.core.model.Task>,
+    val checkIns: List<com.aether.core.model.DailyCheckIn>
+)
+
 data class PersonalizeUiState(
     val prefs: PersonalizationPrefs = PersonalizationPrefs(),
     val learned: LearnedProfile = LearnedProfile.EMPTY
@@ -29,27 +39,34 @@ class PersonalizeViewModel(
     repository: AetherRepository,
     goalsRepository: GoalsRepository,
     private val personalizationRepository: PersonalizationRepository,
-    personalizationEngine: PersonalizationEngine
+    personalizationEngine: PersonalizationEngine,
+    routineRepository: RoutineRepository
 ) : ViewModel() {
 
     private var latest = PersonalizationPrefs()
 
     val uiState: StateFlow<PersonalizeUiState> = combine(
-        personalizationRepository.observePrefs(),
-        personalizationRepository.observeBehaviorEvents(),
-        goalsRepository.observeActiveGoals(),
-        goalsRepository.observeAllTasks(),
-        repository.observeRecentCheckIns(60)
-    ) { prefs, events, goals, tasks, checkIns ->
-        latest = prefs
-        val learned = if (prefs.learningEnabled) {
-            personalizationEngine.learn(tasks, goals, checkIns, events, System.currentTimeMillis()) { millis ->
-                Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour
-            }
+        combine(
+            personalizationRepository.observePrefs(),
+            personalizationRepository.observeBehaviorEvents(),
+            goalsRepository.observeActiveGoals(),
+            goalsRepository.observeAllTasks(),
+            repository.observeRecentCheckIns(60)
+        ) { prefs, events, goals, tasks, checkIns -> Inputs(prefs, events, goals, tasks, checkIns) },
+        routineRepository.observeRoutines(),
+        routineRepository.observeLogsSince(java.time.LocalDate.now().minusDays(30).toString())
+    ) { inputs, routines, logs ->
+        latest = inputs.prefs
+        val learned = if (inputs.prefs.learningEnabled) {
+            personalizationEngine.learn(
+                inputs.tasks, inputs.goals, inputs.checkIns, inputs.events, System.currentTimeMillis(),
+                { millis -> Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour },
+                routineSignals(routines, logs, java.time.LocalDate.now().toString())
+            )
         } else {
             LearnedProfile.EMPTY
         }
-        PersonalizeUiState(prefs, learned)
+        PersonalizeUiState(inputs.prefs, learned)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PersonalizeUiState())
 
     fun setPersona(persona: Persona) = update { it.withPersona(persona) }

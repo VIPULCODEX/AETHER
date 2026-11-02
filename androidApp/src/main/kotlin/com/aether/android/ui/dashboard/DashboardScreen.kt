@@ -141,7 +141,7 @@ fun DashboardScreen(
                     AccentCard(
                         accentColor = missionColor,
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { viewModel.toggleMissionDone() }
+                        onClick = { viewModel.completeSuggestion() }
                     ) {
                         Text(
                             if (state.missionDoneToday) "Today's Mission · Done" else "Today's Mission",
@@ -160,7 +160,7 @@ fun DashboardScreen(
                                 color = AetherOnAccent,
                                 modifier = Modifier.weight(1f)
                             )
-                            if (!state.missionDoneToday && (suggestion.taskId != null || suggestion.goalId != null)) {
+                            if (!state.missionDoneToday && (suggestion.taskId != null || suggestion.goalId != null || suggestion.routineId != null)) {
                                 Text(
                                     "Not now",
                                     style = MaterialTheme.typography.labelLarge,
@@ -405,6 +405,31 @@ private fun TodayCard(state: DashboardUiState, vm: DashboardViewModel, onNavigat
                 Text("${state.streak.current}-day streak", style = MaterialTheme.typography.labelLarge, color = AetherFlame, maxLines = 1)
                 Text("best ${state.streak.best} · ${state.streak.last7}/7 this week", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, maxLines = 1)
             }
+        }
+        Spacer(Modifier.height(12.dp))
+        Text("How is your energy today?", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Drained", "Low", "Okay", "Good", "Great").forEachIndexed { i, label ->
+                val level = i + 1
+                val selected = state.energyToday == level
+                Text(
+                    label, style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false,
+                    color = if (selected) AetherOnAccent else AetherTextPrimary,
+                    modifier = Modifier
+                        .background(if (selected) AetherSky else AetherSurface2, androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .clickable { vm.setEnergy(level) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Sleep last night", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, modifier = Modifier.weight(1f))
+            val sleep = state.sleepToday ?: 7.0
+            Text("−", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary, modifier = Modifier.clickable { vm.setSleep(sleep - 0.5) }.padding(horizontal = 14.dp, vertical = 4.dp))
+            Text(if (state.sleepToday == null) "tap to set" else "%.1f h".format(sleep), style = MaterialTheme.typography.labelLarge, color = AetherTextPrimary, maxLines = 1)
+            Text("+", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary, modifier = Modifier.clickable { vm.setSleep(sleep + 0.5) }.padding(horizontal = 14.dp, vertical = 4.dp))
         }
         if (total == 0) {
             Spacer(Modifier.height(8.dp))

@@ -9,6 +9,7 @@ import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.RoutineRepository
 import com.aether.core.engine.PersonalizationEngine
 import com.aether.core.engine.TimetablePlanner
+import com.aether.core.engine.routineSignals
 import com.aether.core.model.Routine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -67,10 +68,14 @@ class RoutinesViewModel(
             val goals = goalsRepository.observeActiveGoals().first()
             val tasks = goalsRepository.observeAllTasks().first()
             val events = personalizationRepository.observeBehaviorEvents().first()
+            val today = java.time.LocalDate.now()
+            val logs = routineRepository.observeLogsSince(today.minusDays(30).toString()).first()
             val learned = if (prefs.learningEnabled) {
-                personalizationEngine.learn(tasks, goals, emptyList(), events, System.currentTimeMillis()) { millis ->
-                    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour
-                }
+                personalizationEngine.learn(
+                    tasks, goals, emptyList(), events, System.currentTimeMillis(),
+                    { millis -> Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour },
+                    routineSignals(routines, logs, today.toString())
+                )
             } else null
             val peak = prefs.selfChronotype?.peakStartHour ?: learned?.peakStartHour
 

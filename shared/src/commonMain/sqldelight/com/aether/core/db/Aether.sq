@@ -346,11 +346,12 @@ UPDATE Routine SET archived = 1 WHERE id = ?;
 CREATE TABLE RoutineLog (
     routineId TEXT NOT NULL REFERENCES Routine(id),
     date TEXT NOT NULL,
+    completedAt INTEGER,
     PRIMARY KEY (routineId, date)
 );
 
 insertRoutineLog:
-INSERT OR IGNORE INTO RoutineLog(routineId, date) VALUES (?, ?);
+INSERT OR IGNORE INTO RoutineLog(routineId, date, completedAt) VALUES (?, ?, ?);
 
 deleteRoutineLog:
 DELETE FROM RoutineLog WHERE routineId = ? AND date = ?;

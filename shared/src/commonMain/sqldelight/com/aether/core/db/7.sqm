@@ -1,0 +1,4 @@
+-- Migration from schema v7 to v8: remember *when* a routine was ticked, so
+-- personalization can learn the person's real peak hours from routines too.
+
+ALTER TABLE RoutineLog ADD COLUMN completedAt INTEGER;
