@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moved to 26 and broke the SDK setup step
     steps:
       - name: Checkout
         uses: actions/checkout@v4
