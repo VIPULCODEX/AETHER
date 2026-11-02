@@ -4,6 +4,17 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.15.0] - 2026-11-02
+
+### Added
+- One-tap on-device AI: "Download AI model" in the Study Hub fetches a small
+  built-in default (Qwen2.5-0.5B-Instruct, Apache-2.0, ungated, about 547 MB)
+  once, with a progress bar and resume after a dropped connection. No file to
+  find, no account. After that everything runs offline. "Use my own file"
+  remains for advanced users (e.g. Gemma 3 1B).
+- Each model family gets its own chat template (Qwen and Gemma), chosen
+  automatically; prompts are sized to the default model's 1280-token window.
+
 ## [0.14.1] - 2026-11-02
 
 ### Fixed

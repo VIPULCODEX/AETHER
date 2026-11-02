@@ -346,28 +346,49 @@ private fun Pill(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun ModelCard(vm: StudyViewModel) {
     val status by vm.llmStatus.collectAsState()
-    val context = LocalContext.current
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) vm.importModel(uri, uri.lastPathSegment?.substringAfterLast('/') ?: "On-device model")
     }
+    val hasModel = status is LlmStatus.Ready || vm.modelBytes > 0
     AetherCard(modifier = Modifier.fillMaxWidth()) {
-        Text("On-device model", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+        Text("On-device AI", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
         Spacer(Modifier.height(4.dp))
         Text(
             when (val s = status) {
-                LlmStatus.NotLoaded -> if (vm.modelBytes > 0) "Model saved on this device. It loads when needed and is released from memory in the background." else "Optional. Pick a MediaPipe Gemma .task file (e.g. Gemma 3 1B int4) and answers and summaries are written by the model, fully offline. Without it, extractive mode is used."
-                LlmStatus.Loading -> "Loading the model... (first import copies a large file)"
+                LlmStatus.NotLoaded -> if (hasModel) "Installed on this device. It loads when needed and is released from memory in the background."
+                else "Download a small AI model once (about 547 MB, Wi-Fi recommended). After that, answers, summaries, explanations and practice questions are written by the model, fully offline. Without it, AETHER still answers straight from your sources."
+                is LlmStatus.Downloading -> "Downloading the model: ${s.percent}%. You can leave this screen; if the connection drops, tap Download again to resume."
+                LlmStatus.Loading -> "Getting the model ready..."
                 is LlmStatus.Ready -> "Ready: ${s.modelName}"
-                is LlmStatus.Failed -> "Failed: ${s.message}"
+                is LlmStatus.Failed -> "Problem: ${s.message}"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = if (status is LlmStatus.Failed) AetherCoral else AetherTextSecondary
         )
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            AetherOutlinedButton(if (status is LlmStatus.Ready || vm.modelBytes > 0) "Replace model" else "Load model file", onClick = { picker.launch(arrayOf("*/*")) })
-            if (status is LlmStatus.Ready || vm.modelBytes > 0) AetherOutlinedButton("Remove", onClick = vm::removeModel)
+        (status as? LlmStatus.Downloading)?.let {
+            Spacer(Modifier.height(10.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { it.percent / 100f },
+                modifier = Modifier.fillMaxWidth().height(6.dp),
+                color = AetherSky,
+                trackColor = AetherSurface2
+            )
         }
+        Spacer(Modifier.height(10.dp))
+        val busy = status is LlmStatus.Downloading || status is LlmStatus.Loading
+        if (!hasModel) {
+            AetherButton("Download AI model (547 MB)", modifier = Modifier.fillMaxWidth(), enabled = !busy, onClick = vm::downloadModel)
+            Spacer(Modifier.height(8.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AetherOutlinedButton("Use my own file", onClick = { picker.launch(arrayOf("*/*")) })
+            if (hasModel) AetherOutlinedButton("Remove", onClick = vm::removeModel)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Default: Qwen2.5-0.5B (Apache-2.0). It is small, so expect simpler writing than a big cloud model. Advanced: pick any MediaPipe .task file (Gemma 3 1B writes better but needs a Hugging Face login to download).",
+            style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary
+        )
     }
 }
 

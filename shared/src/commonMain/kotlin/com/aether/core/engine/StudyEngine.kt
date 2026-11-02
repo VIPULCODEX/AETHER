@@ -17,7 +17,7 @@ data class CardDraft(val sourceId: String, val front: String, val back: String)
 data class QuizQuestion(val prompt: String, val options: List<String>, val correctIndex: Int)
 
 private const val MAX_CHUNK_CHARS = 420
-private const val MAX_LLM_CONTEXT_CHARS = 3000
+private const val MAX_LLM_CONTEXT_CHARS = 2200
 private const val NOT_IN_SOURCES = "NOT_IN_SOURCES"
 private const val K1 = 1.5
 private const val B = 0.75
