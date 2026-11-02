@@ -17,6 +17,7 @@ import com.aether.android.ui.components.AccentCard
 import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.theme.AetherCyan
+import com.aether.android.ui.theme.AetherEmerald
 import com.aether.android.ui.theme.AetherIndigo
 import com.aether.android.ui.theme.AetherOnAccent
 import com.aether.android.ui.theme.AetherRose
@@ -33,6 +34,17 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
             contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                AccentCard(
+                    accentColor = AetherEmerald,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onNavigate("routines") }
+                ) {
+                    Text("Routines", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Daily work, commitments, auto-planned timetable.", style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
+                }
+            }
             item {
                 AccentCard(
                     accentColor = AetherRose,

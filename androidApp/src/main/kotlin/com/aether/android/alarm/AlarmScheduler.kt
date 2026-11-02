@@ -33,7 +33,9 @@ class AlarmScheduler(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) alarmManager.canScheduleExactAlarms() else true
 
     /** Cancels every currently-scheduled slot alarm, then — if enabled and permitted — schedules fresh ones for [slots]. */
-    fun rescheduleAll(slots: List<ScheduleSlot>) {
+    fun rescheduleAll(allSlots: List<ScheduleSlot>) {
+        // Fixed commitments ("fx_") appear on the timetable but never ring.
+        val slots = allSlots.filter { !it.id.startsWith("fx_") }
         preferences.getScheduledSlotIds().forEach { cancel(it) }
         if (!preferences.isEnabled() || !canScheduleExact()) {
             preferences.setScheduledSlotIds(emptySet())
@@ -70,6 +72,34 @@ class AlarmScheduler(private val context: Context) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
         } catch (e: SecurityException) {
             // Permission revoked between our check and this call — nothing more we can do here.
+        }
+    }
+
+    /**
+     * For Settings' test buttons. 0 seconds posts the notification right away; otherwise rings after the delay
+     * (lock the phone first to see the full-screen alarm). Never touches the weekly timetable.
+     */
+    fun fireTest(delaySeconds: Int) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra(EXTRA_SLOT_ID, "aether_test")
+            putExtra(EXTRA_ACTIVITY_LABEL, "Test alarm")
+            putExtra(EXTRA_DAY_OF_WEEK, -1)
+            putExtra(EXTRA_TIME_LABEL, "")
+        }
+        if (delaySeconds <= 0) {
+            context.sendBroadcast(intent)
+            return
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, "aether_test".hashCode(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val triggerAt = System.currentTimeMillis() + delaySeconds * 1_000L
+        try {
+            if (canScheduleExact()) alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+            else alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+        } catch (e: SecurityException) {
+            // Nothing more to do; the Settings screen already explains the missing permission.
         }
     }
 

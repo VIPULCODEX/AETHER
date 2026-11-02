@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -100,7 +101,7 @@ val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem("More", "more", Icons.Outlined.MoreHoriz, Icons.Filled.MoreHoriz)
 )
 
-private val MORE_ROUTES = setOf("more", "research", "settings", "personalize", "study", "lifemap", "coming_soon/gate")
+private val MORE_ROUTES = setOf("more", "research", "settings", "personalize", "study", "lifemap", "routines", "coming_soon/gate")
 
 private val LocalTopBarHeight = compositionLocalOf { 96.dp }
 private val LocalBackdrop = compositionLocalOf<LayerBackdrop?> { null }
@@ -177,7 +178,10 @@ fun AetherScaffold(
         Box(
             Modifier
                 .fillMaxSize()
+                // The ambient colour lives *inside* the recorded layer on purpose: glass can only refract what's
+                // behind it, and flat near-black gives it nothing to bend.
                 .layerBackdrop(backdrop)
+                .ambientBackground()
         ) {
             CompositionLocalProvider(LocalTopBarHeight provides topBarHeight) {
                 content()
@@ -230,9 +234,32 @@ private fun GlassTopBar(
                 .statusBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             style = MaterialTheme.typography.headlineMedium,
-            color = AetherTextPrimary
+            color = AetherTextPrimary,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
+}
+
+/** Deep indigo wash with two soft colour glows, drawn behind every screen. */
+private fun Modifier.ambientBackground(): Modifier = this.drawBehind {
+    drawRect(
+        Brush.verticalGradient(listOf(Color(0xFF191430), AetherBackground, Color(0xFF0D0B13)))
+    )
+    drawRect(
+        Brush.radialGradient(
+            listOf(Color(0xFF6C5CE7).copy(alpha = 0.22f), Color.Transparent),
+            center = Offset(size.width * 0.95f, size.height * 0.08f),
+            radius = size.minDimension * 0.9f
+        )
+    )
+    drawRect(
+        Brush.radialGradient(
+            listOf(Color(0xFF0984E3).copy(alpha = 0.16f), Color.Transparent),
+            center = Offset(size.width * 0.05f, size.height * 0.82f),
+            radius = size.minDimension * 0.8f
+        )
+    )
 }
 
 @Composable
@@ -250,7 +277,7 @@ private fun GlassBottomNavBar(
 
     // Non-null only while a finger is down on the bar. dragIndex is the
     // nearest tab (icon tint + which tab a release commits to); dragOffsetPx
-    // is the finger-relative target the pill's spring chases.
+    // is the finger-relative target the pill chases.
     var dragIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffsetPx by remember { mutableStateOf<Float?>(null) }
     val displayedIndex = dragIndex ?: selectedIndex
@@ -268,28 +295,27 @@ private fun GlassBottomNavBar(
         val isHeld = dragIndex != null
         val settledTargetPx = tabWidthPx * displayedIndex
 
-        // The pill is a spring chasing its target (the finger while held, the
-        // selected tab otherwise). Retargeting keeps its velocity, so it
-        // trails the finger slightly and overshoots a touch when it settles,
-        // like a drop of liquid, instead of following a fixed-duration tween.
+        // The pill chases its target (the finger while held, the selected tab
+        // otherwise) with a spring, so retargeting keeps its momentum. Both
+        // springs are (near) critically damped: smooth glide, no wobble.
         val pillX = remember { Animatable(settledTargetPx) }
         val target = dragOffsetPx ?: settledTargetPx
         LaunchedEffect(target, isHeld) {
             pillX.animateTo(
                 target,
-                if (isHeld) spring(dampingRatio = 0.82f, stiffness = 650f)
-                else spring(dampingRatio = 0.6f, stiffness = 300f)
+                if (isHeld) spring(dampingRatio = 1f, stiffness = 900f)
+                else spring(dampingRatio = 0.82f, stiffness = 420f)
             )
         }
 
-        // Pops larger when grabbed, relaxes on release. Scales about its own centre.
+        // Pops slightly larger when grabbed, relaxes on release. Uniform scale
+        // only: the glass sampling assumes the pill isn't squashed.
         val lift by animateFloatAsState(
-            targetValue = if (isHeld) 1.12f else 1f,
-            animationSpec = if (isHeld) spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium) else spring(0.7f, 260f),
+            targetValue = if (isHeld) 1.1f else 1f,
+            animationSpec = spring(dampingRatio = 0.75f, stiffness = 400f),
             label = "navPillLift"
         )
-        // Light glow that rises while held, so the grabbed pill reads as "lit".
-        val glow by animateFloatAsState(if (isHeld) 1f else 0f, tween(220), label = "navPillGlow")
+        val glow by animateFloatAsState(if (isHeld) 1f else 0f, tween(200), label = "navPillGlow")
 
         Box(
             Modifier
@@ -300,16 +326,13 @@ private fun GlassBottomNavBar(
                     shape = { RoundedCornerShape(50) },
                     effects = {
                         vibrancy()
-                        blur(8.dp.toPx())
-                        lens(22.dp.toPx(), 26.dp.toPx(), depthEffect = true)
+                        blur(10.dp.toPx())
+                        lens(20.dp.toPx(), 20.dp.toPx())
                     },
-                    highlight = { Highlight(width = 1.dp, alpha = 0.9f, style = HighlightStyle.Default(angle = 55f)) },
-                    shadow = { Shadow(radius = 22.dp, offset = DpOffset(0.dp, 8.dp), color = Color.Black.copy(alpha = 0.28f)) },
-                    innerShadow = { InnerShadow(radius = 10.dp, offset = DpOffset(0.dp, 3.dp), color = Color.White.copy(alpha = 0.10f)) },
                     onDrawSurface = {
                         drawRect(
                             Brush.verticalGradient(
-                                listOf(AetherSurface1.copy(alpha = 0.58f), AetherSurface1.copy(alpha = 0.36f))
+                                listOf(AetherSurface1.copy(alpha = 0.55f), AetherSurface1.copy(alpha = 0.38f))
                             )
                         )
                     }
@@ -350,24 +373,21 @@ private fun GlassBottomNavBar(
                 Modifier
                     .padding(6.dp)
                     .offset { IntOffset(pillX.value.roundToInt(), 0) }
+                    .graphicsLayer {
+                        scaleX = lift
+                        scaleY = lift
+                    }
                     .size(width = tabWidth - 12.dp, height = 54.dp)
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { RoundedCornerShape(50) },
                         effects = {
-                            lens(12.dp.toPx(), 18.dp.toPx(), depthEffect = true, chromaticAberration = true)
+                            lens(10.dp.toPx(), 14.dp.toPx(), chromaticAberration = true)
                         },
-                        highlight = { Highlight(width = 1.dp, alpha = 0.6f + 0.4f * glow, style = HighlightStyle.Default(angle = 60f)) },
-                        shadow = { Shadow(radius = 12.dp, offset = DpOffset(0.dp, 4.dp), color = Color.Black.copy(alpha = 0.22f)) },
-                        innerShadow = { InnerShadow(radius = 8.dp, offset = DpOffset(0.dp, 2.dp), color = Color.White.copy(alpha = 0.08f + 0.10f * glow)) },
-                        layerBlock = {
-                            // Squash and stretch along the direction of travel, proportional to speed.
-                            val stretch = (abs(pillX.velocity) / (tabWidthPx * 9f)).coerceIn(0f, 0.22f)
-                            scaleX = lift * (1f + stretch)
-                            scaleY = lift * (1f - stretch * 0.45f)
-                        },
+                        // A pale, frosted tint (not a solid blue blob) so the glass and the icon on it stay legible.
                         onDrawSurface = {
-                            drawRect(AetherSky.copy(alpha = 0.22f + 0.10f * glow))
+                            drawRect(Color.White.copy(alpha = 0.10f + 0.07f * glow))
+                            drawRect(AetherSky.copy(alpha = 0.08f))
                         }
                     )
             )
@@ -375,11 +395,12 @@ private fun GlassBottomNavBar(
             Row(Modifier.fillMaxSize()) {
                 BOTTOM_NAV_ITEMS.forEachIndexed { index, item ->
                     val selected = index == displayedIndex
+                    // White-on-glass for the active tab; blue-on-blue is what made it vanish.
                     val tint by animateColorAsState(
-                        if (selected) AetherSky else AetherTextSecondary, tween(180), label = "navTint"
+                        if (selected) AetherTextPrimary else AetherTextSecondary, tween(160), label = "navTint"
                     )
                     val iconScale by animateFloatAsState(
-                        if (selected) 1.14f else 1f, spring(0.55f, 420f), label = "navIconScale"
+                        if (selected) 1.12f else 1f, spring(0.8f, 500f), label = "navIconScale"
                     )
                     Box(
                         Modifier
@@ -399,7 +420,7 @@ private fun GlassBottomNavBar(
                                     .size(21.dp)
                                     .graphicsLayer { scaleX = iconScale; scaleY = iconScale }
                             )
-                            Text(item.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                            Text(item.label, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1)
                         }
                     }
                 }

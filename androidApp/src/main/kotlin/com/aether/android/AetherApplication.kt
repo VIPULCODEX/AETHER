@@ -10,6 +10,7 @@ import com.aether.core.data.AetherRepository
 import com.aether.core.data.DatabaseDriverFactory
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.PersonalizationRepository
+import com.aether.core.data.RoutineRepository
 import com.aether.core.data.StudyRepository
 import com.aether.core.db.AetherDatabase
 import com.aether.core.engine.ContextEngine
@@ -35,6 +36,9 @@ class AetherApplication : Application() {
         private set
 
     lateinit var onDeviceLlm: OnDeviceLlm
+        private set
+
+    lateinit var routineRepository: RoutineRepository
         private set
 
     lateinit var apiKeyStore: ApiKeyStore
@@ -68,6 +72,7 @@ class AetherApplication : Application() {
         goalsRepository = GoalsRepository(database)
         personalizationRepository = PersonalizationRepository(database)
         studyRepository = StudyRepository(database)
+        routineRepository = RoutineRepository(database)
         apiKeyStore = ApiKeyStore(this)
         onDeviceLlm = OnDeviceLlm(this)
         alarmPreferences = AlarmPreferences(this)

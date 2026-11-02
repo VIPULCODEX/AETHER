@@ -320,3 +320,43 @@ DELETE FROM Flashcard WHERE notebookId = ?;
 
 deleteFlashcardsForSource:
 DELETE FROM Flashcard WHERE sourceId = ?;
+
+-- Routines: recurring daily habits / fixed commitments, plus their completion log.
+CREATE TABLE Routine (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    minutes INTEGER NOT NULL,
+    daysMask INTEGER NOT NULL DEFAULT 127,
+    fixedStartMinute INTEGER,
+    createdAt INTEGER NOT NULL,
+    archived INTEGER NOT NULL DEFAULT 0
+);
+
+insertRoutine:
+INSERT INTO Routine(id, title, domain, minutes, daysMask, fixedStartMinute, createdAt, archived)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+
+selectActiveRoutines:
+SELECT * FROM Routine WHERE archived = 0 ORDER BY createdAt;
+
+archiveRoutine:
+UPDATE Routine SET archived = 1 WHERE id = ?;
+
+CREATE TABLE RoutineLog (
+    routineId TEXT NOT NULL REFERENCES Routine(id),
+    date TEXT NOT NULL,
+    PRIMARY KEY (routineId, date)
+);
+
+insertRoutineLog:
+INSERT OR IGNORE INTO RoutineLog(routineId, date) VALUES (?, ?);
+
+deleteRoutineLog:
+DELETE FROM RoutineLog WHERE routineId = ? AND date = ?;
+
+selectRoutineLogsSince:
+SELECT * FROM RoutineLog WHERE date >= ?;
+
+selectRoutineLogDates:
+SELECT DISTINCT date FROM RoutineLog;

@@ -334,7 +334,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.quizTab(state: StudyU
 @Composable
 private fun Pill(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
-        label, style = MaterialTheme.typography.labelLarge,
+        label, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false,
         color = if (selected) AetherOnAccent else AetherTextPrimary,
         modifier = Modifier
             .background(if (selected) AetherSky else AetherSurface2, RoundedCornerShape(50))

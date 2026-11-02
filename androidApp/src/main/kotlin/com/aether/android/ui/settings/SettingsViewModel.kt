@@ -35,6 +35,10 @@ class SettingsViewModel(
         _apiKey.value = ""
     }
 
+    fun testNotificationNow() = alarmScheduler.fireTest(0)
+
+    fun testAlarmIn(seconds: Int) = alarmScheduler.fireTest(seconds)
+
     fun canScheduleExactAlarms(): Boolean = alarmScheduler.canScheduleExact()
 
     /** Turning this on (or off) immediately reschedules against whatever timetable currently exists. */

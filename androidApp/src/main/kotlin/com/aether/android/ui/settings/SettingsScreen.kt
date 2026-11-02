@@ -123,6 +123,34 @@ fun SettingsScreen(
                 }
             }
 
+            item { SectionHeader("Test notification and alarm", "Hear and see them without waiting for a timetable slot.") }
+            item {
+                AetherCard(modifier = Modifier.fillMaxWidth()) {
+                    fun ensureNotificationPermission(): Boolean {
+                        val needed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        if (needed) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        return !needed
+                    }
+                    AetherButton(
+                        text = "Show notification now",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { if (ensureNotificationPermission()) viewModel.testNotificationNow() }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    AetherOutlinedButton(
+                        text = "Ring alarm in 15 seconds",
+                        onClick = { if (ensureNotificationPermission()) viewModel.testAlarmIn(15) }
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Tip: tap the second button, then lock your phone. The full-screen alarm with the AETHER tune should wake the screen. Notification sound follows your alarm volume.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AetherTextSecondary
+                    )
+                }
+            }
+
             item { SectionHeader("Groq API key", "Used only for AI-generated schedules in Goals.") }
             item {
                 AetherCard(modifier = Modifier.fillMaxWidth()) {

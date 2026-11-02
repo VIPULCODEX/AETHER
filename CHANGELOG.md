@@ -4,6 +4,50 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] - 2026-11-02
+
+### Added
+- Routines (More -> Routines): your daily work and fixed commitments. A
+  routine has a duration, days of the week and an optional fixed start time
+  (college, office). "Rebuild my timetable" plans the whole week on-device:
+  fixed blocks stay where they are, the rest is fitted into your waking hours,
+  long demanding routines go into your peak-focus window (learned from your
+  behavior, or the chronotype you set), and anything that doesn't fit is
+  reported instead of dropped. Adding or removing a routine re-plans
+  automatically. Alarms follow the timetable; fixed commitments stay silent.
+- Home: a "Today" card lists today's routines with one-tap ticks and shows
+  your streak (current, best, days this week). A day counts if you tick a
+  routine, finish a task or complete the mission; today not being done yet
+  doesn't break the streak until the day ends. Ticking every routine also
+  marks today's mission done.
+- Database schema v7 (migration 6.sqm): `Routine`, `RoutineLog`. Removing a
+  routine archives it so past completions still count toward streaks.
+
+### Changed
+- Theme: an indigo wash with two soft colour glows now sits behind every
+  screen (and inside the recorded glass layer, so the nav and top bar have
+  something to refract), cards have lit-from-the-corner gradients and a
+  hairline edge.
+- Text no longer wraps or overruns in tight places: chips, buttons, nav labels
+  and the top bar are single-line with ellipsis; Home module rows are clamped.
+
+## [0.13.1] - 2026-11-02
+
+### Fixed
+- Nav bar: the selected tab's icon and label were blue on a blue pill and
+  disappeared; the active tab is now white on a pale frosted pill. In a
+  device screenshot the pill also showed content from the wrong part of the
+  screen ("Ge" from the page title, a ghost "Home" pill near the top). Going
+  back to the pill structure that rendered correctly in 0.7.x (uniform scale
+  applied outside the glass layer, no squash/stretch, no depth effect or
+  custom inner shadow) and dropping the vertical slide on screen changes,
+  which moved the recorded glass layer. Slide is now critically damped:
+  smooth glide with no wobble.
+
+### Added
+- Settings -> "Test notification and alarm": show the branded notification
+  immediately, or ring the full-screen alarm after 15 seconds.
+
 ## [0.13.0] - 2026-11-02
 
 ### Changed

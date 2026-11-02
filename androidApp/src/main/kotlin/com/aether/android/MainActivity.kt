@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
                     personalizationRepository = app.personalizationRepository,
                     personalizationEngine = app.personalizationEngine,
                     studyRepository = app.studyRepository,
+                    routineRepository = app.routineRepository,
                     studyEngine = app.studyEngine,
                     mindMapEngine = app.mindMapEngine,
                     onDeviceLlm = app.onDeviceLlm,

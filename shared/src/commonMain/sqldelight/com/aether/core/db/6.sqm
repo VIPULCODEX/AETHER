@@ -1,0 +1,19 @@
+-- Migration from schema v6 to v7: recurring routines (daily habits and fixed
+-- commitments) and their per-day completion log, which feeds streaks.
+
+CREATE TABLE Routine (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    minutes INTEGER NOT NULL,
+    daysMask INTEGER NOT NULL DEFAULT 127,
+    fixedStartMinute INTEGER,
+    createdAt INTEGER NOT NULL,
+    archived INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE RoutineLog (
+    routineId TEXT NOT NULL REFERENCES Routine(id),
+    date TEXT NOT NULL,
+    PRIMARY KEY (routineId, date)
+);
