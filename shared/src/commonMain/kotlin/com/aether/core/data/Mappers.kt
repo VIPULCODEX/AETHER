@@ -109,7 +109,7 @@ internal fun ResearchNoteRow.toDomain() = ResearchNote(
 internal fun NotebookRow.toDomain() = Notebook(id = id, title = title, createdAt = createdAt, examNotes = examNotes)
 
 internal fun StudySourceRow.toDomain() = StudySource(
-    id = id, notebookId = notebookId, title = title, content = content, createdAt = createdAt, url = url
+    id = id, notebookId = notebookId, title = title, content = content, createdAt = createdAt, url = url, mediaUri = mediaUri, transcript = transcript
 )
 
 internal fun FlashcardRow.toDomain() = Flashcard(

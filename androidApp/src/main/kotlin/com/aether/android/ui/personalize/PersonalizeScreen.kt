@@ -156,7 +156,7 @@ fun PersonalizeScreen(viewModel: PersonalizeViewModel) {
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "From: ${learned.routineCompletions} routine ticks, ${learned.taskCompletions} finished tasks, ${learned.feedbackEvents} suggestion responses.",
+                            "From: ${learned.routineCompletions} routine ticks, ${learned.taskCompletions} finished tasks, ${learned.feedbackEvents} suggestion responses, ${learned.studyReviews} study reviews.",
                             style = MaterialTheme.typography.labelSmall,
                             color = AetherTextSecondary
                         )
@@ -164,7 +164,7 @@ fun PersonalizeScreen(viewModel: PersonalizeViewModel) {
                         if (learned.insights.isEmpty()) {
                             Text(
                                 if (learned.routineCompletions + learned.taskCompletions < 5)
-                                    "Tick your routines on Home or finish tasks. After about 5 completions AETHER can spot your peak hours; log energy and sleep on Home to see how rest affects you."
+                                    "Tick your routines on Home, finish tasks or review flashcards. After about 5 completions AETHER can spot your peak hours; log energy and sleep on Home to see how rest affects you."
                                 else "Enough to start, but nothing stands out yet. Keep going.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = AetherTextSecondary

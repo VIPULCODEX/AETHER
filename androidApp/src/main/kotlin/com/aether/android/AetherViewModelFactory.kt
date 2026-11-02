@@ -76,7 +76,7 @@ class AetherViewModelFactory(
                 PersonalizeViewModel(repository, goalsRepository, personalizationRepository, personalizationEngine, routineRepository) as T
 
             StudyViewModel::class.java ->
-                StudyViewModel(studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine) as T
+                StudyViewModel(studyRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, personalizationRepository) as T
 
             LifeMapViewModel::class.java ->
                 LifeMapViewModel(goalsRepository, mindMapEngine) as T

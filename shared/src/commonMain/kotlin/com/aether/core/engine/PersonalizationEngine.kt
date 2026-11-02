@@ -40,7 +40,8 @@ data class LearnedProfile(
     /** Where the observations came from, so the user can see what AETHER is actually learning from. */
     val taskCompletions: Int = 0,
     val routineCompletions: Int = 0,
-    val feedbackEvents: Int = 0
+    val feedbackEvents: Int = 0,
+    val studyReviews: Int = 0
 ) {
     fun isPeakHour(hour: Int): Boolean {
         val start = peakStartHour ?: return false
@@ -102,8 +103,10 @@ class PersonalizationEngine {
         routineSignals: RoutineSignals = RoutineSignals.NONE
     ): LearnedProfile {
         val completions = tasks.filter { it.isDone && it.completedAt != null }
-        val timedCount = completions.size + routineSignals.completions.size
-        val observations = timedCount + events.size
+        val studyEvents = events.filter { it.type == BehaviorEventType.STUDY_REVIEW }
+        val feedback = events.filter { it.type != BehaviorEventType.STUDY_REVIEW }
+        val timedCount = completions.size + routineSignals.completions.size + studyEvents.size
+        val observations = timedCount + feedback.size
         val confidence = min(1.0, observations.toDouble() / FULL_CONFIDENCE_OBSERVATIONS)
 
         val histogram = DoubleArray(24)
@@ -116,15 +119,19 @@ class PersonalizationEngine {
             val ageDays = ((nowMillis - at) / MILLIS_PER_DAY).coerceAtLeast(0.0)
             histogram[hourOf(at).coerceIn(0, 23)] += 0.5.pow(ageDays / RECENCY_HALF_LIFE_DAYS)
         }
+        studyEvents.forEach { e ->
+            val ageDays = ((nowMillis - e.createdAt) / MILLIS_PER_DAY).coerceAtLeast(0.0)
+            histogram[e.hourOfDay.coerceIn(0, 23)] += 0.5.pow(ageDays / RECENCY_HALF_LIFE_DAYS)
+        }
         val peakStart = if (timedCount >= MIN_COMPLETIONS_FOR_PEAK) bestWindowStart(histogram) else null
         val chronotype = peakStart?.let { chronotypeFor((it + PEAK_WINDOW_HOURS / 2) % 24) }
 
         val domainByGoal = goals.associate { it.id to it.domain }
         val taskDomains = tasks.groupBy { domainByGoal[it.goalId] }.filterKeys { it != null }
-        val domains = (taskDomains.keys.filterNotNull() + events.mapNotNull { it.domain } + routineSignals.scheduledByDomain.keys).toSortedSet()
+        val domains = (taskDomains.keys.filterNotNull() + feedback.mapNotNull { it.domain } + routineSignals.scheduledByDomain.keys).toSortedSet()
         val domainStats = domains.associateWith { domain ->
             val domainTasks = taskDomains[domain].orEmpty()
-            val domainEvents = events.filter { it.domain == domain }
+            val domainEvents = feedback.filter { it.domain == domain }
             DomainStat(
                 domain = domain,
                 tasksDone = domainTasks.count { it.isDone } + (routineSignals.doneByDomain[domain] ?: 0),
@@ -144,7 +151,8 @@ class PersonalizationEngine {
             insights = buildInsights(peakStart, chronotype, domainStats, checkIns),
             taskCompletions = completions.size,
             routineCompletions = routineSignals.completions.size,
-            feedbackEvents = events.size
+            feedbackEvents = feedback.size,
+            studyReviews = studyEvents.size
         )
     }
 
@@ -169,7 +177,7 @@ class PersonalizationEngine {
     ): List<String> {
         val insights = mutableListOf<String>()
         if (peakStart != null && chronotype != null) {
-            insights += "You finish most tasks between ${formatHour(peakStart)} and ${formatHour((peakStart + PEAK_WINDOW_HOURS) % 24)} — a ${chronotype.label.lowercase()} pattern."
+            insights += "You get the most done between ${formatHour(peakStart)} and ${formatHour((peakStart + PEAK_WINDOW_HOURS) % 24)} — a ${chronotype.label.lowercase()} pattern."
         }
         val reliable = domainStats.values.filter { it.tasksTotal >= 4 }
         reliable.maxByOrNull { it.completionRate }?.let { best ->

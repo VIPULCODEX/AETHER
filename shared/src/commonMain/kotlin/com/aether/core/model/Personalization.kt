@@ -83,7 +83,8 @@ data class PersonalizationPrefs(
         if (wakeHour <= sleepHour) hour in wakeHour until sleepHour else hour >= wakeHour || hour < sleepHour
 }
 
-enum class BehaviorEventType { SUGGESTION_ACCEPTED, SUGGESTION_DISMISSED }
+/** STUDY_REVIEW: a flashcard graded or quiz answered. Carries only the hour it happened, so AETHER can learn when you study. */
+enum class BehaviorEventType { SUGGESTION_ACCEPTED, SUGGESTION_DISMISSED, STUDY_REVIEW }
 
 data class BehaviorEvent(
     val id: String,

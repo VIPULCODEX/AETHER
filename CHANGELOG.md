@@ -4,6 +4,21 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.16.0] - 2026-11-02
+
+### Added
+- Study Hub: video as a source, with a built-in player. Pick your own video
+  file and its subtitle file (.srt or .vtt). The subtitles become the source,
+  so summaries, cited answers, flashcards, practice and mind maps all work on
+  what is said in the video. "Play video" opens the player (Media3) with a
+  live transcript: the spoken line is highlighted and tapping any line jumps
+  the video there. Files stay where they are; nothing is uploaded. (Videos
+  without subtitles need on-device speech-to-text, which isn't built yet.)
+- Learning from study: reviewing flashcards and answering quizzes now tells
+  AETHER *when* you study (only the hour, no content), so it can find your
+  study hours and use them for peak-window suggestions and timetable planning.
+- Database schema v9 (migration 8.sqm): video URI and timed transcript.
+
 ## [0.15.1] - 2026-11-02
 
 ### Fixed

@@ -40,8 +40,11 @@ class StudyRepository(private val database: AetherDatabase) {
     fun observeSources(notebookId: String): Flow<List<StudySource>> =
         q.selectSourcesForNotebook(notebookId).asFlow().mapToList(Dispatchers.Default).map { rows -> rows.map { it.toDomain() } }
 
-    suspend fun addSource(notebookId: String, title: String, content: String, url: String? = null) {
-        q.insertStudySource(generateId(), notebookId, title.trim(), content.trim(), currentTimeMillis(), url)
+    suspend fun addSource(
+        notebookId: String, title: String, content: String, url: String? = null,
+        mediaUri: String? = null, transcript: String? = null
+    ) {
+        q.insertStudySource(generateId(), notebookId, title.trim(), content.trim(), currentTimeMillis(), url, mediaUri, transcript)
     }
 
     suspend fun setExamNotes(notebookId: String, notes: String) {
