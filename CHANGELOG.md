@@ -4,6 +4,18 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.14.1] - 2026-11-02
+
+### Fixed
+- AI timetable failed with `404 model_not_found`: Groq retired the hard-coded
+  model. The client now asks Groq which models the user's own key can use and
+  picks the best chat model (skipping speech/guard models), retries once if a
+  model disappears, and tolerates reasoning-model replies (code fences,
+  `<think>` blocks). 401 and 429 errors now say what to do.
+- Pink smudge under the status bar: the ambient glow was being over-saturated
+  by the top bar's vibrancy; the bar is now blur-only and the glow is softer
+  and lower.
+
 ## [0.14.0] - 2026-11-02
 
 ### Added
