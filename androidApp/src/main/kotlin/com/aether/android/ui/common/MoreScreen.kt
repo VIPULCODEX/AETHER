@@ -16,7 +16,10 @@ import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AccentCard
 import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherScaffold
+import com.aether.android.ui.theme.AetherCyan
+import com.aether.android.ui.theme.AetherIndigo
 import com.aether.android.ui.theme.AetherOnAccent
+import com.aether.android.ui.theme.AetherRose
 import com.aether.android.ui.theme.AetherSky
 import com.aether.android.ui.theme.AetherSlate
 
@@ -30,6 +33,39 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
             contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                AccentCard(
+                    accentColor = AetherRose,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onNavigate("lifemap") }
+                ) {
+                    Text("Life Map", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Vision to goals to tasks, as one map.", style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
+                }
+            }
+            item {
+                AccentCard(
+                    accentColor = AetherCyan,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onNavigate("study") }
+                ) {
+                    Text("Study Hub", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Sources, cited Q&A, summaries, flashcards, quizzes.", style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
+                }
+            }
+            item {
+                AccentCard(
+                    accentColor = AetherIndigo,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onNavigate("personalize") }
+                ) {
+                    Text("Personalize", style = MaterialTheme.typography.titleMedium, color = AetherOnAccent)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Persona, tone, modules, and what AETHER has learned.", style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
+                }
+            }
             item {
                 AccentCard(
                     accentColor = AetherSky,

@@ -1,7 +1,6 @@
 package com.aether.android.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,7 +27,7 @@ fun AccentCard(
     contentPadding: PaddingValues = PaddingValues(20.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val clickable = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    val clickable = if (onClick != null) Modifier.pressable(onClick) else Modifier
     val gradient = Brush.verticalGradient(
         colors = listOf(accentColor, accentColor.copy(alpha = 0.82f))
     )

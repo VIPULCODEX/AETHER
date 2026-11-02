@@ -1,6 +1,9 @@
 package com.aether.core.data
 
 import com.aether.core.db.BodyLog as BodyLogRow
+import com.aether.core.db.Flashcard as FlashcardRow
+import com.aether.core.db.Notebook as NotebookRow
+import com.aether.core.db.StudySource as StudySourceRow
 import com.aether.core.db.DailyCheckIn as DailyCheckInRow
 import com.aether.core.db.Goal as GoalRow
 import com.aether.core.db.JournalEntry as JournalEntryRow
@@ -10,11 +13,14 @@ import com.aether.core.db.Task as TaskRow
 import com.aether.core.db.UserProfile as UserProfileRow
 import com.aether.core.model.BodyLog
 import com.aether.core.model.DailyCheckIn
+import com.aether.core.model.Flashcard
 import com.aether.core.model.Goal
 import com.aether.core.model.GoalType
 import com.aether.core.model.JournalEntry
+import com.aether.core.model.Notebook
 import com.aether.core.model.ResearchNote
 import com.aether.core.model.ScheduleSlot
+import com.aether.core.model.StudySource
 import com.aether.core.model.Task
 import com.aether.core.model.UserProfile
 
@@ -96,4 +102,23 @@ internal fun ResearchNoteRow.toDomain() = ResearchNote(
     status = status,
     createdAt = createdAt,
     attachmentUri = attachmentUri
+)
+
+internal fun NotebookRow.toDomain() = Notebook(id = id, title = title, createdAt = createdAt, examNotes = examNotes)
+
+internal fun StudySourceRow.toDomain() = StudySource(
+    id = id, notebookId = notebookId, title = title, content = content, createdAt = createdAt, url = url
+)
+
+internal fun FlashcardRow.toDomain() = Flashcard(
+    id = id,
+    notebookId = notebookId,
+    sourceId = sourceId,
+    front = front,
+    back = back,
+    ease = ease,
+    intervalDays = intervalDays.toInt(),
+    repetitions = repetitions.toInt(),
+    dueAt = dueAt,
+    createdAt = createdAt
 )

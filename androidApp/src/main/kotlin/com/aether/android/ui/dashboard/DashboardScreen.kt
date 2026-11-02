@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ import com.aether.android.ui.theme.AetherSurface2
 import com.aether.android.ui.theme.AetherTextPrimary
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.aether.core.engine.LifeScoreBreakdown
+import com.aether.core.model.Modules
 import java.time.LocalTime
 
 private val DAY_LETTERS = listOf("M", "T", "W", "T", "F", "S", "S")
@@ -77,6 +79,20 @@ fun DashboardScreen(
             contentPadding = PaddingValues(top = AetherBars.TopContentPadding, bottom = AetherBars.BottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            if (!state.prefs.onboarded) {
+                item {
+                    AetherCard(modifier = Modifier.fillMaxWidth(), onClick = { onNavigate("personalize") }) {
+                        Text("Make AETHER yours", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Tell it who you are — student, researcher, athlete — and it adapts suggestions, tone and modules. It keeps learning from there, on this device only.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AetherTextSecondary
+                        )
+                    }
+                }
+            }
+
             item {
                 LifeScoreCard(
                     lifeScore = state.lifeScore,
@@ -131,11 +147,24 @@ fun DashboardScreen(
                         Spacer(Modifier.height(4.dp))
                         Text(suggestion.reason, style = MaterialTheme.typography.bodyMedium, color = AetherOnAccent)
                         Spacer(Modifier.height(8.dp))
-                        Text(
-                            if (state.missionDoneToday) "Tap to undo" else "Tap when you've done it",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AetherOnAccent
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (state.missionDoneToday) "Tap to undo" else "Tap when you've done it",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AetherOnAccent,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (!state.missionDoneToday && (suggestion.taskId != null || suggestion.goalId != null)) {
+                                Text(
+                                    "Not now",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = AetherOnAccent,
+                                    modifier = Modifier
+                                        .clickable { viewModel.dismissSuggestion() }
+                                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -152,7 +181,7 @@ fun DashboardScreen(
                 )
             }
 
-            item {
+            if (Modules.JOURNAL in state.prefs.enabledModules) item {
                 ModuleRow(
                     icon = Icons.AutoMirrored.Filled.MenuBook,
                     dotColor = AetherCyan,
@@ -162,7 +191,7 @@ fun DashboardScreen(
                 )
             }
 
-            if (state.focusAreas.contains("Gym")) {
+            if (state.focusAreas.contains("Gym") && Modules.GYM in state.prefs.enabledModules) {
                 item {
                     val log = state.latestBodyLog
                     ModuleRow(
@@ -176,7 +205,7 @@ fun DashboardScreen(
                 }
             }
 
-            if (state.focusAreas.contains("Research")) {
+            if (state.focusAreas.contains("Research") && Modules.RESEARCH in state.prefs.enabledModules) {
                 item {
                     ModuleRow(
                         icon = Icons.Filled.Science,

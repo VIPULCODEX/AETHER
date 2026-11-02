@@ -211,3 +211,112 @@ SELECT * FROM BodyLog ORDER BY createdAt DESC;
 
 deleteBodyLog:
 DELETE FROM BodyLog WHERE id = ?;
+
+-- Personalization: explicit user choices (key/value) + implicit feedback log.
+CREATE TABLE Preference (
+    prefKey TEXT NOT NULL PRIMARY KEY,
+    prefValue TEXT NOT NULL
+);
+
+upsertPreference:
+INSERT OR REPLACE INTO Preference(prefKey, prefValue) VALUES (?, ?);
+
+selectAllPreferences:
+SELECT * FROM Preference;
+
+CREATE TABLE BehaviorEvent (
+    id TEXT NOT NULL PRIMARY KEY,
+    createdAt INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    domain TEXT,
+    hourOfDay INTEGER NOT NULL
+);
+
+insertBehaviorEvent:
+INSERT INTO BehaviorEvent(id, createdAt, type, domain, hourOfDay) VALUES (?, ?, ?, ?, ?);
+
+selectRecentBehaviorEvents:
+SELECT * FROM BehaviorEvent ORDER BY createdAt DESC LIMIT ?;
+
+deleteAllBehaviorEvents:
+DELETE FROM BehaviorEvent;
+
+-- Study Hub
+CREATE TABLE Notebook (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    examNotes TEXT
+);
+
+updateNotebookExamNotes:
+UPDATE Notebook SET examNotes = ? WHERE id = ?;
+
+insertNotebook:
+INSERT INTO Notebook(id, title, createdAt) VALUES (?, ?, ?);
+
+selectAllNotebooks:
+SELECT * FROM Notebook ORDER BY createdAt DESC;
+
+deleteNotebook:
+DELETE FROM Notebook WHERE id = ?;
+
+CREATE TABLE StudySource (
+    id TEXT NOT NULL PRIMARY KEY,
+    notebookId TEXT NOT NULL REFERENCES Notebook(id),
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    url TEXT
+);
+
+CREATE INDEX idx_source_notebook ON StudySource(notebookId);
+
+insertStudySource:
+INSERT INTO StudySource(id, notebookId, title, content, createdAt, url) VALUES (?, ?, ?, ?, ?, ?);
+
+selectSourceStorage:
+SELECT notebookId, COUNT(*) AS sourceCount, SUM(LENGTH(content)) AS chars FROM StudySource GROUP BY notebookId;
+
+selectSourcesForNotebook:
+SELECT * FROM StudySource WHERE notebookId = ? ORDER BY createdAt;
+
+deleteStudySource:
+DELETE FROM StudySource WHERE id = ?;
+
+deleteSourcesForNotebook:
+DELETE FROM StudySource WHERE notebookId = ?;
+
+CREATE TABLE Flashcard (
+    id TEXT NOT NULL PRIMARY KEY,
+    notebookId TEXT NOT NULL REFERENCES Notebook(id),
+    sourceId TEXT,
+    front TEXT NOT NULL,
+    back TEXT NOT NULL,
+    ease REAL NOT NULL DEFAULT 2.5,
+    intervalDays INTEGER NOT NULL DEFAULT 0,
+    repetitions INTEGER NOT NULL DEFAULT 0,
+    dueAt INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX idx_flashcard_notebook ON Flashcard(notebookId);
+
+selectCardCounts:
+SELECT notebookId, COUNT(*) AS cardCount FROM Flashcard GROUP BY notebookId;
+
+insertFlashcard:
+INSERT INTO Flashcard(id, notebookId, sourceId, front, back, ease, intervalDays, repetitions, dueAt, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectFlashcardsForNotebook:
+SELECT * FROM Flashcard WHERE notebookId = ? ORDER BY dueAt;
+
+updateFlashcardSchedule:
+UPDATE Flashcard SET ease = ?, intervalDays = ?, repetitions = ?, dueAt = ? WHERE id = ?;
+
+deleteFlashcardsForNotebook:
+DELETE FROM Flashcard WHERE notebookId = ?;
+
+deleteFlashcardsForSource:
+DELETE FROM Flashcard WHERE sourceId = ?;

@@ -1,11 +1,10 @@
 package com.aether.android.ui.components
 
-import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -21,6 +20,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.DpOffset
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -41,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +52,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -57,6 +67,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.theme.AetherBackground
+import com.aether.android.ui.theme.AetherBorder
 import com.aether.android.ui.theme.AetherSky
 import com.aether.android.ui.theme.AetherSurface1
 import com.aether.android.ui.theme.AetherTextPrimary
@@ -69,6 +80,10 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.highlight.HighlightStyle
+import com.kyant.backdrop.shadow.InnerShadow
+import com.kyant.backdrop.shadow.Shadow
 
 data class BottomNavItem(
     val label: String,
@@ -85,7 +100,7 @@ val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem("More", "more", Icons.Outlined.MoreHoriz, Icons.Filled.MoreHoriz)
 )
 
-private val MORE_ROUTES = setOf("more", "research", "settings", "coming_soon/gate")
+private val MORE_ROUTES = setOf("more", "research", "settings", "personalize", "study", "lifemap", "coming_soon/gate")
 
 private val LocalTopBarHeight = compositionLocalOf { 96.dp }
 private val LocalBackdrop = compositionLocalOf<LayerBackdrop?> { null }
@@ -193,9 +208,20 @@ private fun GlassTopBar(
                 shape = { RectangleShape },
                 effects = {
                     vibrancy()
-                    blur(14.dp.toPx())
+                    blur(18.dp.toPx())
                 },
-                onDrawSurface = { drawRect(AetherBackground.copy(alpha = 0.55f)) }
+                // A full-bleed bar needs neither a rim light nor a drop shadow; a single hairline reads cleaner.
+                highlight = null,
+                shadow = null,
+                onDrawSurface = {
+                    drawRect(
+                        Brush.verticalGradient(
+                            listOf(AetherBackground.copy(alpha = 0.78f), AetherBackground.copy(alpha = 0.42f))
+                        )
+                    )
+                    val line = 1.dp.toPx()
+                    drawRect(AetherBorder.copy(alpha = 0.9f), topLeft = Offset(0f, size.height - line), size = Size(size.width, line))
+                }
             )
     ) {
         Text(
@@ -223,14 +249,13 @@ private fun GlassBottomNavBar(
     }
 
     // Non-null only while a finger is down on the bar. dragIndex is the
-    // nearest tab (drives icon tint + which tab a release commits to);
-    // dragOffsetPx is the pill's *continuous* raw finger-relative position,
-    // so it glides pixel-by-pixel under the touch instead of hopping
-    // between quantized per-tab stops while being dragged.
+    // nearest tab (icon tint + which tab a release commits to); dragOffsetPx
+    // is the finger-relative target the pill's spring chases.
     var dragIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffsetPx by remember { mutableStateOf<Float?>(null) }
     val displayedIndex = dragIndex ?: selectedIndex
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
 
     BoxWithConstraints(
         modifier
@@ -242,55 +267,68 @@ private fun GlassBottomNavBar(
         val tabWidthPx = with(density) { tabWidth.toPx() }
         val isHeld = dragIndex != null
         val settledTargetPx = tabWidthPx * displayedIndex
-        val indicatorOffset by animateDpAsState(
-            targetValue = with(density) { (dragOffsetPx ?: settledTargetPx).toDp() },
-            // Follow the finger instantly, pixel-for-pixel, while dragging;
-            // only ease into place for a tap/release-triggered tab change.
-            animationSpec = if (dragOffsetPx != null) snap() else tween(durationMillis = 420, easing = FastOutSlowInEasing),
-            label = "navIndicator"
-        )
-        // Pill pops slightly larger the instant it's grabbed (quick spring),
-        // then eases back to its resting size on release. Scales about its
-        // own center (graphicsLayer's default transform origin) rather than
-        // translating vertically, so it stays hovering centered in the bar
-        // instead of growing into its top/bottom edge.
-        val liftSpec: AnimationSpec<Float> = if (isHeld) {
-            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-        } else {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
+
+        // The pill is a spring chasing its target (the finger while held, the
+        // selected tab otherwise). Retargeting keeps its velocity, so it
+        // trails the finger slightly and overshoots a touch when it settles,
+        // like a drop of liquid, instead of following a fixed-duration tween.
+        val pillX = remember { Animatable(settledTargetPx) }
+        val target = dragOffsetPx ?: settledTargetPx
+        LaunchedEffect(target, isHeld) {
+            pillX.animateTo(
+                target,
+                if (isHeld) spring(dampingRatio = 0.82f, stiffness = 650f)
+                else spring(dampingRatio = 0.6f, stiffness = 300f)
+            )
         }
-        val liftScale by animateFloatAsState(
-            targetValue = if (isHeld) 1.1f else 1f,
-            animationSpec = liftSpec,
-            label = "navPillLiftScale"
+
+        // Pops larger when grabbed, relaxes on release. Scales about its own centre.
+        val lift by animateFloatAsState(
+            targetValue = if (isHeld) 1.12f else 1f,
+            animationSpec = if (isHeld) spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium) else spring(0.7f, 260f),
+            label = "navPillLift"
         )
+        // Light glow that rises while held, so the grabbed pill reads as "lit".
+        val glow by animateFloatAsState(if (isHeld) 1f else 0f, tween(220), label = "navPillGlow")
 
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(66.dp)
                 .drawBackdrop(
                     backdrop = backdrop,
                     shape = { RoundedCornerShape(50) },
                     effects = {
                         vibrancy()
-                        blur(10.dp.toPx())
-                        lens(20.dp.toPx(), 20.dp.toPx())
+                        blur(8.dp.toPx())
+                        lens(22.dp.toPx(), 26.dp.toPx(), depthEffect = true)
                     },
-                    onDrawSurface = { drawRect(AetherSurface1.copy(alpha = 0.45f)) }
+                    highlight = { Highlight(width = 1.dp, alpha = 0.9f, style = HighlightStyle.Default(angle = 55f)) },
+                    shadow = { Shadow(radius = 22.dp, offset = DpOffset(0.dp, 8.dp), color = Color.Black.copy(alpha = 0.28f)) },
+                    innerShadow = { InnerShadow(radius = 10.dp, offset = DpOffset(0.dp, 3.dp), color = Color.White.copy(alpha = 0.10f)) },
+                    onDrawSurface = {
+                        drawRect(
+                            Brush.verticalGradient(
+                                listOf(AetherSurface1.copy(alpha = 0.58f), AetherSurface1.copy(alpha = 0.36f))
+                            )
+                        )
+                    }
                 )
                 .pointerInput(tabWidthPx) {
                     val maxOffsetPx = tabWidthPx * (BOTTOM_NAV_ITEMS.size - 1)
                     fun trackTouch(x: Float) {
-                        // Pill's left edge follows the finger directly (finger
-                        // roughly centered over the pill), clamped so it never
-                        // slides past the first/last tab.
                         dragOffsetPx = (x - tabWidthPx / 2f).coerceIn(0f, maxOffsetPx)
-                        dragIndex = (x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                        val index = (x / tabWidthPx).toInt().coerceIn(0, BOTTOM_NAV_ITEMS.lastIndex)
+                        if (index != dragIndex) {
+                            // A detent under the finger each time the pill crosses into a new tab.
+                            if (dragIndex != null) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            dragIndex = index
+                        }
                     }
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val pointerId = down.id
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         trackTouch(down.position.x)
                         while (true) {
                             val event = awaitPointerEvent()
@@ -299,7 +337,10 @@ private fun GlassBottomNavBar(
                             change.consume()
                             trackTouch(change.position.x)
                         }
-                        dragIndex?.let { index -> onNavigate(BOTTOM_NAV_ITEMS[index].route) }
+                        dragIndex?.let { index ->
+                            if (index != selectedIndex) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            onNavigate(BOTTOM_NAV_ITEMS[index].route)
+                        }
                         dragIndex = null
                         dragOffsetPx = null
                     }
@@ -308,32 +349,44 @@ private fun GlassBottomNavBar(
             Box(
                 Modifier
                     .padding(6.dp)
-                    .offset(x = indicatorOffset)
-                    .graphicsLayer {
-                        scaleX = liftScale
-                        scaleY = liftScale
-                    }
-                    .size(width = tabWidth - 12.dp, height = 52.dp)
+                    .offset { IntOffset(pillX.value.roundToInt(), 0) }
+                    .size(width = tabWidth - 12.dp, height = 54.dp)
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { RoundedCornerShape(50) },
                         effects = {
-                            lens(10.dp.toPx(), 14.dp.toPx(), chromaticAberration = true)
+                            lens(12.dp.toPx(), 18.dp.toPx(), depthEffect = true, chromaticAberration = true)
                         },
-                        onDrawSurface = { drawRect(AetherSky.copy(alpha = 0.28f)) }
+                        highlight = { Highlight(width = 1.dp, alpha = 0.6f + 0.4f * glow, style = HighlightStyle.Default(angle = 60f)) },
+                        shadow = { Shadow(radius = 12.dp, offset = DpOffset(0.dp, 4.dp), color = Color.Black.copy(alpha = 0.22f)) },
+                        innerShadow = { InnerShadow(radius = 8.dp, offset = DpOffset(0.dp, 2.dp), color = Color.White.copy(alpha = 0.08f + 0.10f * glow)) },
+                        layerBlock = {
+                            // Squash and stretch along the direction of travel, proportional to speed.
+                            val stretch = (abs(pillX.velocity) / (tabWidthPx * 9f)).coerceIn(0f, 0.22f)
+                            scaleX = lift * (1f + stretch)
+                            scaleY = lift * (1f - stretch * 0.45f)
+                        },
+                        onDrawSurface = {
+                            drawRect(AetherSky.copy(alpha = 0.22f + 0.10f * glow))
+                        }
                     )
             )
 
             Row(Modifier.fillMaxSize()) {
                 BOTTOM_NAV_ITEMS.forEachIndexed { index, item ->
                     val selected = index == displayedIndex
+                    val tint by animateColorAsState(
+                        if (selected) AetherSky else AetherTextSecondary, tween(180), label = "navTint"
+                    )
+                    val iconScale by animateFloatAsState(
+                        if (selected) 1.14f else 1f, spring(0.55f, 420f), label = "navIconScale"
+                    )
                     Box(
                         Modifier
                             .weight(1f)
                             .fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        val tint = if (selected) AetherSky else AetherTextSecondary
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -342,13 +395,11 @@ private fun GlassBottomNavBar(
                                 imageVector = if (selected) item.selectedIcon else item.icon,
                                 contentDescription = item.label,
                                 tint = tint,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier
+                                    .size(21.dp)
+                                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale }
                             )
-                            Text(
-                                item.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = tint
-                            )
+                            Text(item.label, style = MaterialTheme.typography.labelSmall, color = tint)
                         }
                     }
                 }

@@ -1,67 +1,74 @@
 # AETHER
 
-A personal Life OS — not a habit tracker. Everything in this app answers one
-question: *does this move me closer to my life's vision?* Built offline-first
-and privacy-first: your data never leaves the device unless you explicitly
-opt into a specific integration.
+A personal Life OS and exam-prep companion, built offline-first and
+privacy-first: your data stays on the device unless you explicitly use one
+of the few opt-in network actions listed below.
+
+## What it does
+
+- **Life OS:** goal hierarchy (Life Vision down to tasks), daily check-ins,
+  Life Score, journal, gym tracking, research notes, an editable weekly
+  timetable with real alarms.
+- **Personalization (on-device):** pick a persona (Student, Researcher,
+  Athlete, Professional) as a starting point, then override tone, planning
+  style, chronotype, waking hours and modules. AETHER also learns from your
+  own behavior (when you finish tasks, which domains you follow through on,
+  which suggestions you accept) with a visible confidence level and a
+  one-tap "forget".
+- **Study Hub (NotebookLM-style):** notebooks of your own sources (pasted
+  text, .txt/.md, selectable-text PDFs, web pages). Cited answers grounded in
+  those sources, interactive digests, flashcards with spaced repetition,
+  quizzes, GATE-style MCQ/MSQ/NAT practice steered by your own description
+  of the exam pattern, and mind maps. An optional on-device language model
+  (MediaPipe + a Gemma `.task` file you provide) phrases answers; without it
+  everything falls back to extractive, citation-backed answers.
+- **Life Map:** your goal hierarchy as a pan/zoom mind map.
+- **Glass UI:** liquid-glass navigation (refraction, spring physics, haptics)
+  built on [AndroidLiquidGlass](https://github.com/Kyant0/AndroidLiquidGlass).
+  Refraction needs Android 13+; older devices get blur only.
+
+## Network use
+
+Everything runs on-device except three opt-in actions:
+
+1. **Web reader** fetches one public page you ask it to (Study Hub).
+2. **AI schedule generation** with your own Groq key (Goals). This is the one
+   remaining cloud dependency and a candidate for replacement by the
+   on-device model.
+3. Nothing else. No analytics, no accounts, no sync.
 
 ## Architecture
 
-- **`shared/`** — Kotlin Multiplatform core. All business logic lives here:
-  the local Life Data Store (SQLDelight), the Scoring Engine (Life Score,
-  Consistency, Execution, Goal Completion), and the Context Engine
-  ("what should I do now?"). This module has no UI — every platform
-  (Android today, iOS/Desktop/Web later) is a thin shell on top of it.
-- **`androidApp/`** — native Android app using Jetpack Compose, the current
-  and only UI shell. Design system: dark-mode-only, glass-surfaced,
-  monochrome with a single restrained accent color reserved for
-  positive-trajectory signals.
+- `shared/` Kotlin Multiplatform core: SQLDelight store, and all engines
+  (scoring, context, personalization, study, digest, exam, mind map). No UI.
+- `androidApp/` Jetpack Compose shell.
 
-Package names: `com.aether.core.*` (shared), `com.aether.android.*` (Android UI).
-
-## What's implemented (v0.1.0)
-
-- Local persistence: Journal entries, Goals, Daily check-ins
-- Scoring Engine v1: Life Score = average of Consistency Score (rolling
-  14-day engagement), Execution Score (rolling 7-day plan-vs-actual), and
-  Goal Completion %
-- Context Engine v1: time + energy + nearest-deadline-goal based suggestion,
-  always returned with an explicit reason (never generic)
-- Dashboard screen: Life Score, Today's Mission, active goals
-- Journal screen: write and view entries, fully persisted locally
-
-## Known limitations (not yet built)
-
-- No Gym / Research OS / GATE prep / Analytics-full modules yet — those
-  follow the same shared-core + thin-UI pattern established here
-- No "Add Goal" or daily check-in UI yet (repository methods exist, not wired up)
-- Database is plain local SQLite (app-private storage) — not yet encrypted at rest
-- No app launcher icon yet
-- Glassmorphism is approximated (translucent surface + hairline border);
-  true backdrop blur (API 31+ RenderEffect) is a follow-up
-- No iOS/Desktop/Web targets configured yet — the shared module's
-  commonMain/androidMain split makes adding them straightforward later
-- No automated tests yet
+Engine unit tests live in `shared/src/commonTest`.
 
 ## Building
 
-This machine doesn't have a JDK, Android SDK, or Gradle installed, so this
-project has not been compiled or run yet. To build it:
+CI (`.github/workflows/android-build.yml`) builds the debug APK on every push
+to `main` and attaches it to `v*` tags. Locally: JDK 17, Android SDK 35,
+Gradle 8.9:
 
-1. Install **Android Studio** (Ladybug 2024.2+ or newer — needs Kotlin 2.1 support)
-2. Open this folder as a project — Android Studio will use its bundled JDK
-   and Gradle, and will regenerate the Gradle wrapper jar automatically on
-   first sync (only `gradle-wrapper.properties` is checked in; the wrapper
-   jar binary is not, since it can't be produced without a JDK/Gradle here)
-3. Run on a device or emulator, API 26+
+```
+echo "sdk.dir=$ANDROID_HOME" > local.properties
+gradle :shared:testDebugUnitTest
+gradle :androidApp:assembleDebug
+```
 
-## Versioning & releases
+## Known limitations
 
-Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in
-`androidApp/build.gradle.kts` (`versionName`/`versionCode`) and mirrored as
-git tags (`v0.1.0`, `v0.2.0`, ...). Each tag corresponds to a GitHub Release
-with build artifacts attached once CI/build signing is set up. An iOS target
-will adopt the same version number once it exists, so Android and iOS stay
-in lockstep release-to-release.
+- Database is plain SQLite in app-private storage (not encrypted at rest).
+- Scanned PDFs need OCR, which isn't implemented. JavaScript-rendered or
+  login-gated pages can't be read by the web reader.
+- Small on-device models make mistakes, especially on numerical questions;
+  generated practice content is labelled and should be verified.
+- Extractive answers are keyword/BM25 based and English-oriented.
+- The model file is not downloaded by the app; you pick it once.
+- No iOS/Desktop targets yet.
 
-Current version: **0.1.0** (initial architecture + Dashboard + Journal).
+## Versioning
+
+Semantic versioning in `androidApp/build.gradle.kts`, mirrored as git tags
+and GitHub Releases. See `CHANGELOG.md`.

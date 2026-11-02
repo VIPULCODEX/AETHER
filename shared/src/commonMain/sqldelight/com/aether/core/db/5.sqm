@@ -1,0 +1,6 @@
+-- Migration from schema v5 to v6: per-notebook exam notes (how the subject
+-- is examined, used to steer explanations/practice) and the origin URL of
+-- sources read from web pages.
+
+ALTER TABLE Notebook ADD COLUMN examNotes TEXT;
+ALTER TABLE StudySource ADD COLUMN url TEXT;

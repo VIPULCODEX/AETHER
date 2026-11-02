@@ -1,0 +1,33 @@
+-- Migration from schema v4 to v5: Study Hub (notebooks of sources, plus
+-- spaced-repetition flashcards generated from them). All on-device.
+
+CREATE TABLE Notebook (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE StudySource (
+    id TEXT NOT NULL PRIMARY KEY,
+    notebookId TEXT NOT NULL REFERENCES Notebook(id),
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX idx_source_notebook ON StudySource(notebookId);
+
+CREATE TABLE Flashcard (
+    id TEXT NOT NULL PRIMARY KEY,
+    notebookId TEXT NOT NULL REFERENCES Notebook(id),
+    sourceId TEXT,
+    front TEXT NOT NULL,
+    back TEXT NOT NULL,
+    ease REAL NOT NULL DEFAULT 2.5,
+    intervalDays INTEGER NOT NULL DEFAULT 0,
+    repetitions INTEGER NOT NULL DEFAULT 0,
+    dueAt INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX idx_flashcard_notebook ON Flashcard(notebookId);
