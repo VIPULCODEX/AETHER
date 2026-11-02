@@ -211,7 +211,6 @@ private fun GlassTopBar(
                 backdrop = backdrop,
                 shape = { RectangleShape },
                 effects = {
-                    vibrancy()
                     blur(18.dp.toPx())
                 },
                 // A full-bleed bar needs neither a rim light nor a drop shadow; a single hairline reads cleaner.
@@ -248,8 +247,8 @@ private fun Modifier.ambientBackground(): Modifier = this.drawBehind {
     )
     drawRect(
         Brush.radialGradient(
-            listOf(Color(0xFF6C5CE7).copy(alpha = 0.22f), Color.Transparent),
-            center = Offset(size.width * 0.95f, size.height * 0.08f),
+            listOf(Color(0xFF6C5CE7).copy(alpha = 0.13f), Color.Transparent),
+            center = Offset(size.width * 0.95f, size.height * 0.30f),
             radius = size.minDimension * 0.9f
         )
     )
