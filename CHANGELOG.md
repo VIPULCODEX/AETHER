@@ -4,6 +4,24 @@ All notable changes to AETHER are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.18.0] - 2026-11-25
+
+### Added
+- Bring your own timetable (Routines, or the home screen when empty): paste a
+  plan you already made. Clock tables, plain "time activity" lines and
+  duration-only tables are read on-device, with a preview before anything is
+  saved. Your times are kept as written; sleep and wake rows set your waking
+  hours; breaks and meals show on the timetable without alarms or ticks.
+- Home screen shows today's weekday focus and your own rules from that plan.
+
+### Changed
+- Timed blocks from your own timetable ring and count toward learning and
+  suggestions; manually added fixed commitments stay silent as before.
+- Database schema v11 (migration 10.sqm).
+
+### Fixed
+- 0.17.0 did not compile: the notes client was not passed through navigation.
+
 ## [0.17.0] - 2026-11-03
 
 ### Added

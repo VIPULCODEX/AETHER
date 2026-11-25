@@ -75,6 +75,7 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val studyProgress by viewModel.studyProgress.collectAsState()
+    val myPlan by viewModel.myPlan.collectAsState()
     val greeting = greetingForHour(LocalTime.now().hour)
 
     AetherScaffold(title = greeting) {
@@ -109,6 +110,25 @@ fun DashboardScreen(
             }
 
             item { TodayCard(state, viewModel, onNavigate) }
+
+            val focus = myPlan.dayFocus[java.time.LocalDate.now().dayOfWeek.value - 1]
+            if (focus != null || myPlan.rules.isNotEmpty()) {
+                item {
+                    AetherCard(modifier = Modifier.fillMaxWidth()) {
+                        focus?.let {
+                            Text("Today's focus", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+                            Text(it, style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                        }
+                        if (myPlan.rules.isNotEmpty()) {
+                            if (focus != null) Spacer(Modifier.height(10.dp))
+                            Text("Your rules", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+                            myPlan.rules.forEach {
+                                Text("• $it", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
+                            }
+                        }
+                    }
+                }
+            }
 
             studyProgress?.let { p ->
                 item { StudyProgressCard(p, onOpen = { onNavigate("study") }) }
@@ -445,6 +465,7 @@ private fun TodayCard(state: DashboardUiState, vm: DashboardViewModel, onNavigat
             )
             Spacer(Modifier.height(10.dp))
             Text("Add routines", style = MaterialTheme.typography.labelLarge, color = AetherSky, modifier = Modifier.clickable { onNavigate("routines") }.padding(vertical = 4.dp))
+            Text("Already have a timetable? Paste it", style = MaterialTheme.typography.labelLarge, color = AetherSky, modifier = Modifier.clickable { onNavigate("import") }.padding(vertical = 4.dp))
         } else {
             Spacer(Modifier.height(10.dp))
             state.todayRoutines.forEach { item ->
@@ -461,7 +482,9 @@ private fun TodayCard(state: DashboardUiState, vm: DashboardViewModel, onNavigat
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(item.routine.title, style = MaterialTheme.typography.bodyLarge, color = if (item.done) AetherTextSecondary else AetherTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(item.routine.domain, style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, maxLines = 1)
+                        Text(
+                            item.routine.fixedStartMinute?.let { "%d:%02d %s · ".format((it / 60 + 11) % 12 + 1, it % 60, if (it < 720) "AM" else "PM") }.orEmpty() + item.routine.domain,
+                            style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary, maxLines = 1)
                     }
                 }
             }

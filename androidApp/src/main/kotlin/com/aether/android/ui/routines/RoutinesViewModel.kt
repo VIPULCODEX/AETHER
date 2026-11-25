@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.aether.android.alarm.AlarmScheduler
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
+import com.aether.core.data.MyPlan
+import com.aether.core.engine.ImportedBlock
 import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.RoutineRepository
 import com.aether.core.engine.PersonalizationEngine
@@ -46,6 +48,27 @@ class RoutinesViewModel(
         }
     }
 
+    /** Adopts the user's own timetable as it is: their times, their sleep hours, their weekday focus and rules. */
+    fun importTimetable(blocks: List<ImportedBlock>, wakeMinute: Int?, sleepMinute: Int?, plan: MyPlan, onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (blocks.isNotEmpty()) {
+                val prefs = personalizationRepository.observePrefs().first()
+                if (wakeMinute != null || sleepMinute != null) {
+                    personalizationRepository.savePrefs(
+                        prefs.copy(
+                            wakeHour = wakeMinute?.div(60) ?: prefs.wakeHour,
+                            sleepHour = sleepMinute?.div(60) ?: prefs.sleepHour
+                        )
+                    )
+                }
+                routineRepository.replaceWithImported(blocks)
+                rebuild()
+            }
+            if (plan.dayFocus.isNotEmpty() || plan.rules.isNotEmpty()) personalizationRepository.saveMyPlan(plan)
+            onDone()
+        }
+    }
+
     fun removeRoutine(id: String) {
         viewModelScope.launch {
             routineRepository.archiveRoutine(id)
@@ -58,36 +81,38 @@ class RoutinesViewModel(
      * from what AETHER has learned (or the chronotype you set). Replaces the existing timetable and its alarms.
      */
     fun rebuildTimetable() {
-        viewModelScope.launch {
-            val routines = routineRepository.observeRoutines().first()
-            if (routines.isEmpty()) {
-                _message.value = "Add a routine first."
-                return@launch
-            }
-            val prefs = personalizationRepository.observePrefs().first()
-            val goals = goalsRepository.observeActiveGoals().first()
-            val tasks = goalsRepository.observeAllTasks().first()
-            val events = personalizationRepository.observeBehaviorEvents().first()
-            val today = java.time.LocalDate.now()
-            val logs = routineRepository.observeLogsSince(today.minusDays(30).toString()).first()
-            val learned = if (prefs.learningEnabled) {
-                personalizationEngine.learn(
-                    tasks, goals, emptyList(), events, System.currentTimeMillis(),
-                    { millis -> Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour },
-                    routineSignals(routines, logs, today.toString())
-                )
-            } else null
-            val peak = prefs.selfChronotype?.peakStartHour ?: learned?.peakStartHour
+        viewModelScope.launch { rebuild() }
+    }
 
-            val plan = planner.plan(routines, prefs.wakeHour, prefs.sleepHour, peak)
-            repository.regenerateSchedule(plan.slots)
-            alarmScheduler.rescheduleAll(plan.slots)
-            _message.value = if (plan.unplaced.isEmpty()) {
-                "Timetable rebuilt: ${plan.slots.size} blocks this week."
-            } else {
-                "Rebuilt, but there wasn't room for: ${plan.unplaced.take(4).joinToString(", ")}" +
-                    if (plan.unplaced.size > 4) " and ${plan.unplaced.size - 4} more." else "."
-            }
+    private suspend fun rebuild() {
+        val routines = routineRepository.observeRoutines().first()
+        if (routines.isEmpty()) {
+            _message.value = "Add a routine first."
+            return
+        }
+        val prefs = personalizationRepository.observePrefs().first()
+        val goals = goalsRepository.observeActiveGoals().first()
+        val tasks = goalsRepository.observeAllTasks().first()
+        val events = personalizationRepository.observeBehaviorEvents().first()
+        val today = java.time.LocalDate.now()
+        val logs = routineRepository.observeLogsSince(today.minusDays(30).toString()).first()
+        val learned = if (prefs.learningEnabled) {
+            personalizationEngine.learn(
+                tasks, goals, emptyList(), events, System.currentTimeMillis(),
+                { millis -> Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).hour },
+                routineSignals(routines, logs, today.toString())
+            )
+        } else null
+        val peak = prefs.selfChronotype?.peakStartHour ?: learned?.peakStartHour
+
+        val plan = planner.plan(routines, prefs.wakeHour, prefs.sleepHour, peak)
+        repository.regenerateSchedule(plan.slots)
+        alarmScheduler.rescheduleAll(plan.slots)
+        _message.value = if (plan.unplaced.isEmpty()) {
+            "Timetable rebuilt: ${plan.slots.size} blocks this week."
+        } else {
+            "Rebuilt, but there wasn't room for: ${plan.unplaced.take(4).joinToString(", ")}" +
+                if (plan.unplaced.size > 4) " and ${plan.unplaced.size - 4} more." else "."
         }
     }
 

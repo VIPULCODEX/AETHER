@@ -38,6 +38,7 @@ import com.aether.android.ui.mindmap.LifeMapViewModel
 import com.aether.android.ui.personalize.PersonalizeScreen
 import com.aether.android.ui.personalize.PersonalizeViewModel
 import com.aether.android.ui.research.ResearchScreen
+import com.aether.android.ui.routines.ImportTimetableScreen
 import com.aether.android.ui.routines.RoutinesScreen
 import com.aether.android.ui.routines.RoutinesViewModel
 import com.aether.android.ui.research.ResearchViewModel
@@ -68,6 +69,7 @@ private const val ROUTE_RESEARCH = "research"
 private const val ROUTE_PERSONALIZE = "personalize"
 private const val ROUTE_STUDY = "study"
 private const val ROUTE_ROUTINES = "routines"
+private const val ROUTE_IMPORT = "import"
 private const val ROUTE_LIFE_MAP = "lifemap"
 private const val ROUTE_COMING_SOON = "coming_soon/{slug}"
 
@@ -88,6 +90,7 @@ fun AetherNavHost(
     examEngine: ExamEngine,
     apiKeyStore: ApiKeyStore,
     groqScheduleClient: GroqScheduleClient,
+    claudeNotesClient: com.aether.android.data.ClaudeNotesClient,
     alarmPreferences: AlarmPreferences,
     alarmScheduler: AlarmScheduler
 ) {
@@ -95,7 +98,7 @@ fun AetherNavHost(
     val factory = remember {
         AetherViewModelFactory(
             repository, goalsRepository, scoringEngine, contextEngine,
-            personalizationRepository, personalizationEngine, studyRepository, routineRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, alarmPreferences, alarmScheduler
+            personalizationRepository, personalizationEngine, studyRepository, routineRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, claudeNotesClient, alarmPreferences, alarmScheduler
         )
     }
 
@@ -157,7 +160,11 @@ fun AetherNavHost(
         }
         composable(ROUTE_ROUTINES) {
             val viewModel: RoutinesViewModel = viewModel(factory = factory)
-            RoutinesScreen(viewModel = viewModel)
+            RoutinesScreen(viewModel = viewModel, onImport = { navController.navigate(ROUTE_IMPORT) })
+        }
+        composable(ROUTE_IMPORT) {
+            val viewModel: RoutinesViewModel = viewModel(factory = factory)
+            ImportTimetableScreen(viewModel = viewModel, onDone = { navigate(ROUTE_DASHBOARD) })
         }
         composable(ROUTE_STUDY) {
             val viewModel: StudyViewModel = viewModel(factory = factory)

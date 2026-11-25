@@ -135,7 +135,8 @@ internal fun RoutineRow.toDomain() = Routine(
     daysMask = daysMask.toInt(),
     fixedStartMinute = fixedStartMinute?.toInt(),
     createdAt = createdAt,
-    archived = archived == 1L
+    archived = archived == 1L,
+    remind = remind == 1L
 )
 
 internal fun StudyMistakeRow.toDomain() = StudyMistake(

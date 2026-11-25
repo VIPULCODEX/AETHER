@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
+import com.aether.core.data.MyPlan
+import com.aether.core.engine.BREAK_DOMAIN
 import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.RoutineRepository
 import com.aether.core.data.StudyRepository
@@ -82,6 +84,10 @@ class DashboardViewModel(
         ProgressEngine.snapshot(cards, mistakes, System.currentTimeMillis()).takeIf { it.hasAnything }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Today's focus and the rules from the user's own imported plan. */
+    val myPlan: StateFlow<MyPlan> = personalizationRepository.observeMyPlan()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MyPlan())
+
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
@@ -140,7 +146,9 @@ class DashboardViewModel(
                     val todayIso = todayDate.toString()
                     val todayDow = todayDate.dayOfWeek.value - 1
                     val doneToday = routineInfo.logs.filter { it.date == todayIso }.map { it.routineId }.toSet()
-                    latestTodayRoutines = routineInfo.routines.filter { it.occursOn(todayDow) }
+                    latestTodayRoutines = routineInfo.routines
+                        .filter { it.occursOn(todayDow) && it.domain != BREAK_DOMAIN }
+                        .sortedBy { it.fixedStartMinute ?: Int.MAX_VALUE }
                     latestDoneToday = doneToday
                     val signals = routineSignals(routineInfo.routines, routineInfo.logs, todayIso)
                     val learned = if (personalData.prefs.learningEnabled) {

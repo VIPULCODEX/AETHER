@@ -66,7 +66,7 @@ class TimetablePlanner {
 
     private fun slot(day: Int, r: Routine, start: Int) = ScheduleSlot(
         // "fx_" marks a fixed commitment: shown on the timetable but silent (you are already there).
-        id = "${if (r.isFixed) "fx" else "rt"}_${day}_${r.id}",
+        id = "${if (r.isTracked) "rt" else "fx"}_${day}_${r.id}",
         dayOfWeek = day,
         timeLabel = "${clock(start)} - ${clock(start + r.minutes)}",
         activityLabel = r.title,

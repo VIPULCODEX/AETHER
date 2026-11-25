@@ -125,7 +125,7 @@ class ContextEngine {
 
         // A routine still open today is the most concrete thing there is to do, and it carries today's deadline.
         val routineCandidates = ctx.pendingRoutines
-            .filter { !it.isFixed && allowed(it.domain) }
+            .filter { r -> r.isTracked && allowed(r.domain) && (r.fixedStartMinute ?: 0) / 60 <= ctx.hourOfDay + 1 }
             .map { r ->
                 val effort = when { r.minutes >= 90 -> 5; r.minutes >= 60 -> 4; r.minutes >= 30 -> 3; else -> 2 }
                 Candidate("rt-${r.id}", r.id, null, r.title, r.domain, ctx.endOfTodayMillis, effort, 4, routineId = r.id)

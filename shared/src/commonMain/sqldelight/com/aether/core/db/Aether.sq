@@ -366,12 +366,13 @@ CREATE TABLE Routine (
     daysMask INTEGER NOT NULL DEFAULT 127,
     fixedStartMinute INTEGER,
     createdAt INTEGER NOT NULL,
-    archived INTEGER NOT NULL DEFAULT 0
+    archived INTEGER NOT NULL DEFAULT 0,
+    remind INTEGER NOT NULL DEFAULT 0
 );
 
 insertRoutine:
-INSERT INTO Routine(id, title, domain, minutes, daysMask, fixedStartMinute, createdAt, archived)
-VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+INSERT INTO Routine(id, title, domain, minutes, daysMask, fixedStartMinute, createdAt, archived, remind)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?);
 
 selectActiveRoutines:
 SELECT * FROM Routine WHERE archived = 0 ORDER BY createdAt;

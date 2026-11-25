@@ -69,11 +69,11 @@ fun routineSignals(routines: List<Routine>, logs: List<RoutineLog>, todayIso: St
     val scheduled = HashMap<String, Int>()
     for (back in 0 until windowDays) {
         val dow = (((today - back) + 3) % 7).toInt() // 1970-01-01 was a Thursday; Monday = 0
-        routines.filter { !it.isFixed && it.occursOn(dow) }.forEach { scheduled.merge(it.domain, 1, Int::plus) }
+        routines.filter { it.isTracked && it.occursOn(dow) }.forEach { scheduled.merge(it.domain, 1, Int::plus) }
     }
     val recent = logs.filter { l -> StreakEngine.epochDay(l.date)?.let { today - it in 0 until windowDays } == true }
     val done = HashMap<String, Int>()
-    recent.forEach { l -> byId[l.routineId]?.takeIf { !it.isFixed }?.let { done.merge(it.domain, 1, Int::plus) } }
+    recent.forEach { l -> byId[l.routineId]?.takeIf { it.isTracked }?.let { done.merge(it.domain, 1, Int::plus) } }
     val completions = logs.mapNotNull { l -> l.completedAt?.let { t -> byId[l.routineId]?.let { it.domain to t } } }
     return RoutineSignals(completions, scheduled, done)
 }

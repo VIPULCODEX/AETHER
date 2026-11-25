@@ -56,7 +56,7 @@ import com.aether.core.model.ALL_DAYS
 private val DAY_LABELS = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 @Composable
-fun RoutinesScreen(viewModel: RoutinesViewModel) {
+fun RoutinesScreen(viewModel: RoutinesViewModel, onImport: () -> Unit) {
     val routines by viewModel.routines.collectAsState()
     val message by viewModel.message.collectAsState()
 
@@ -74,6 +74,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel) {
                     "Add what you do every day, plus fixed commitments like college or office. AETHER fits the rest around them and keeps the timetable and alarms in sync."
                 )
             }
+            item { AetherOutlinedButton("I already have a timetable: paste it", modifier = Modifier.fillMaxWidth(), onClick = onImport) }
             item { AddRoutineCard(viewModel) }
 
             if (routines.isNotEmpty()) {
@@ -101,7 +102,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel) {
                     Text(r.title, style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Spacer(Modifier.height(2.dp))
                     val days = if (r.daysMask == ALL_DAYS) "Every day" else DAY_LABELS.filterIndexed { i, _ -> r.occursOn(i) }.joinToString(" ")
-                    val when_ = r.fixedStartMinute?.let { "fixed ${clock(it)}-${clock(it + r.minutes)}" } ?: "${durationLabel(r.minutes)}, flexible"
+                    val when_ = r.fixedStartMinute?.let { "${if (r.remind) "at" else "fixed"} ${clock(it)}-${clock(it + r.minutes)}" } ?: "${durationLabel(r.minutes)}, flexible"
                     Text("${r.domain} · $when_ · $days", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary)
                     Spacer(Modifier.height(8.dp))
                     Text("Remove", style = MaterialTheme.typography.labelLarge, color = AetherCoral, modifier = Modifier.clickable { viewModel.removeRoutine(r.id) })

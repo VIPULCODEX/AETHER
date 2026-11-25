@@ -1,0 +1,4 @@
+-- Migration from schema v10 to v11: timed blocks imported from the user's own timetable keep their exact
+-- time but still ring and count as their work (older fixed commitments stay silent).
+
+ALTER TABLE Routine ADD COLUMN remind INTEGER NOT NULL DEFAULT 0;

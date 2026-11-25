@@ -3,6 +3,8 @@ package com.aether.core.data
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.aether.core.db.AetherDatabase
+import com.aether.core.engine.ImportedBlock
+import com.aether.core.model.ALL_DAYS
 import com.aether.core.model.Routine
 import com.aether.core.model.RoutineLog
 import kotlinx.coroutines.Dispatchers
@@ -19,8 +21,32 @@ class RoutineRepository(private val database: AetherDatabase) {
     suspend fun addRoutine(title: String, domain: String, minutes: Int, daysMask: Int, fixedStartMinute: Int?) {
         q.insertRoutine(
             generateId(), title.trim(), domain.trim().ifBlank { "General" },
-            minutes.toLong(), daysMask.toLong(), fixedStartMinute?.toLong(), currentTimeMillis()
+            minutes.toLong(), daysMask.toLong(), fixedStartMinute?.toLong(), currentTimeMillis(), 0L
         )
+    }
+
+    /**
+     * Makes [blocks] the whole daily routine. A block identical to an existing routine keeps that routine
+     * (and its history); every other routine is archived, so past ticks still count toward streaks.
+     */
+    suspend fun replaceWithImported(blocks: List<ImportedBlock>) {
+        q.transaction {
+            val unused = q.selectActiveRoutines().executeAsList().map { it.toDomain() }.toMutableList()
+            val now = currentTimeMillis()
+            blocks.forEachIndexed { i, b ->
+                val remind = b.startMinute != null && !b.isBreak
+                val same = unused.firstOrNull {
+                    it.title == b.title && it.minutes == b.minutes && it.fixedStartMinute == b.startMinute &&
+                        it.remind == remind && it.daysMask == ALL_DAYS
+                }
+                if (same != null) unused.remove(same)
+                else q.insertRoutine(
+                    generateId(), b.title, b.domain, b.minutes.toLong(), ALL_DAYS.toLong(),
+                    b.startMinute?.toLong(), now + i, if (remind) 1L else 0L
+                )
+            }
+            unused.forEach { q.archiveRoutine(it.id) }
+        }
     }
 
     /** Archived, not deleted: earlier completions still count toward streaks. */

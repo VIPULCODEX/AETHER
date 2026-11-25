@@ -14,6 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/** [dayFocus] is keyed 0 = Monday. */
+data class MyPlan(val dayFocus: Map<Int, String> = emptyMap(), val rules: List<String> = emptyList())
+
 /** Explicit preferences + the behavior log that feeds on-device learning. Nothing here leaves the device. */
 class PersonalizationRepository(private val database: AetherDatabase) {
 
@@ -35,6 +38,27 @@ class PersonalizationRepository(private val database: AetherDatabase) {
             q.upsertPreference(KEY_MODULES, prefs.enabledModules.sorted().joinToString(","))
             q.upsertPreference(KEY_LEARNING, prefs.learningEnabled.toString())
             q.upsertPreference(KEY_ONBOARDED, prefs.onboarded.toString())
+        }
+    }
+
+    /** The weekday focus and rules from the user's own plan. */
+    fun observeMyPlan(): Flow<MyPlan> =
+        database.aetherQueries.selectAllPreferences()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                val values = rows.associate { it.prefKey to it.prefValue }
+                MyPlan(
+                    dayFocus = (0..6).mapNotNull { d -> values["$KEY_DAY_FOCUS$d"]?.takeIf { it.isNotBlank() }?.let { d to it } }.toMap(),
+                    rules = values[KEY_RULES]?.lines()?.filter { it.isNotBlank() }.orEmpty()
+                )
+            }
+
+    suspend fun saveMyPlan(plan: MyPlan) {
+        val q = database.aetherQueries
+        q.transaction {
+            (0..6).forEach { q.upsertPreference("$KEY_DAY_FOCUS$it", plan.dayFocus[it].orEmpty()) }
+            q.upsertPreference(KEY_RULES, plan.rules.joinToString("\n"))
         }
     }
 
@@ -84,6 +108,8 @@ class PersonalizationRepository(private val database: AetherDatabase) {
 
     private companion object {
         const val AUTO = "AUTO"
+        const val KEY_DAY_FOCUS = "dayFocus_"
+        const val KEY_RULES = "myRules"
         const val KEY_PERSONA = "persona"
         const val KEY_TONE = "tone"
         const val KEY_PLANNING = "planningStyle"
