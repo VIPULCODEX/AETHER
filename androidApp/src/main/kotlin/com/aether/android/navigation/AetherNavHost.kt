@@ -92,13 +92,14 @@ fun AetherNavHost(
     groqScheduleClient: GroqScheduleClient,
     claudeNotesClient: com.aether.android.data.ClaudeNotesClient,
     alarmPreferences: AlarmPreferences,
-    alarmScheduler: AlarmScheduler
+    alarmScheduler: AlarmScheduler,
+    phaseSwitcher: com.aether.android.alarm.PhaseSwitcher
 ) {
     val navController = rememberNavController()
     val factory = remember {
         AetherViewModelFactory(
             repository, goalsRepository, scoringEngine, contextEngine,
-            personalizationRepository, personalizationEngine, studyRepository, routineRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, claudeNotesClient, alarmPreferences, alarmScheduler
+            personalizationRepository, personalizationEngine, studyRepository, routineRepository, studyEngine, mindMapEngine, onDeviceLlm, digestEngine, examEngine, apiKeyStore, groqScheduleClient, claudeNotesClient, alarmPreferences, alarmScheduler, phaseSwitcher
         )
     }
 

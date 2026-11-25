@@ -49,7 +49,8 @@ class AetherViewModelFactory(
     private val groqScheduleClient: GroqScheduleClient,
     private val claudeNotesClient: com.aether.android.data.ClaudeNotesClient,
     private val alarmPreferences: AlarmPreferences,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    private val phaseSwitcher: com.aether.android.alarm.PhaseSwitcher
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -83,7 +84,7 @@ class AetherViewModelFactory(
                 LifeMapViewModel(goalsRepository, mindMapEngine) as T
 
             RoutinesViewModel::class.java ->
-                RoutinesViewModel(routineRepository, repository, goalsRepository, personalizationRepository, personalizationEngine, alarmScheduler) as T
+                RoutinesViewModel(routineRepository, repository, goalsRepository, personalizationRepository, personalizationEngine, alarmScheduler, phaseSwitcher) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

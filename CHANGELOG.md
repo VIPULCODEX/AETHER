@@ -12,6 +12,9 @@ All notable changes to AETHER are documented here. Format follows
   duration-only tables are read on-device, with a preview before anything is
   saved. Your times are kept as written; sleep and wake rows set your waking
   hours; breaks and meals show on the timetable without alarms or ticks.
+- Phases: when the paste has several timetables, each can be given a start
+  date (suggested from headings like "After NET" following "Until 14
+  December"); it takes over that day. Routines shows what is coming.
 - Home screen shows today's weekday focus and your own rules from that plan.
 
 ### Changed

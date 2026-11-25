@@ -59,6 +59,7 @@ private val DAY_LABELS = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 fun RoutinesScreen(viewModel: RoutinesViewModel, onImport: () -> Unit) {
     val routines by viewModel.routines.collectAsState()
     val message by viewModel.message.collectAsState()
+    val upcoming by viewModel.upcoming.collectAsState()
 
     AetherScaffold(title = "Routines") {
         LazyColumn(
@@ -75,6 +76,16 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, onImport: () -> Unit) {
                 )
             }
             item { AetherOutlinedButton("I already have a timetable: paste it", modifier = Modifier.fillMaxWidth(), onClick = onImport) }
+            if (upcoming.isNotEmpty()) {
+                item {
+                    AetherCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Switching later", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                        upcoming.forEach { Text("${it.startDate}: ${it.title}", style = MaterialTheme.typography.bodyMedium, color = AetherTextSecondary) }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Cancel switching", style = MaterialTheme.typography.labelLarge, color = AetherCoral, modifier = Modifier.clickable { viewModel.cancelUpcoming() })
+                    }
+                }
+            }
             item { AddRoutineCard(viewModel) }
 
             if (routines.isNotEmpty()) {

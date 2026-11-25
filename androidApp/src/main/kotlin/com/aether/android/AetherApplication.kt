@@ -50,6 +50,9 @@ class AetherApplication : Application() {
     lateinit var alarmScheduler: AlarmScheduler
         private set
 
+    lateinit var phaseSwitcher: com.aether.android.alarm.PhaseSwitcher
+        private set
+
     val scoringEngine = ScoringEngine()
     val contextEngine = ContextEngine()
     val personalizationEngine = PersonalizationEngine()
@@ -78,5 +81,6 @@ class AetherApplication : Application() {
         onDeviceLlm = OnDeviceLlm(this)
         alarmPreferences = AlarmPreferences(this)
         alarmScheduler = AlarmScheduler(this)
+        phaseSwitcher = com.aether.android.alarm.PhaseSwitcher(this, repository, routineRepository, personalizationRepository, alarmScheduler)
     }
 }

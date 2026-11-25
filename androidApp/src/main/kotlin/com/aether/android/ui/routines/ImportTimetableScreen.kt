@@ -1,5 +1,6 @@
 package com.aether.android.ui.routines
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.aether.android.ui.components.AetherBars
 import com.aether.android.ui.components.AetherButton
@@ -32,11 +34,15 @@ import com.aether.android.ui.components.AetherCard
 import com.aether.android.ui.components.AetherScaffold
 import com.aether.android.ui.components.SectionHeader
 import com.aether.android.ui.components.aetherTextFieldColors
+import com.aether.android.ui.theme.AetherSky
 import com.aether.android.ui.theme.AetherTextPrimary
 import com.aether.android.ui.theme.AetherTextSecondary
 import com.aether.core.data.MyPlan
 import com.aether.core.engine.ImportedBlock
+import com.aether.core.engine.Phase
+import com.aether.core.engine.PhaseSchedule
 import com.aether.core.engine.TimetableImporter
+import java.time.LocalDate
 
 private val WEEKDAYS = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
@@ -50,11 +56,25 @@ fun ImportTimetableScreen(viewModel: RoutinesViewModel, onDone: () -> Unit) {
     var excluded by remember(text, table) { mutableStateOf(emptySet<Int>()) }
     var keepRules by remember(text) { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
+    val today = remember { LocalDate.now().toString() }
+    // Start dates read from the headings; the user can change or remove any of them.
+    var startDates by remember(text) {
+        mutableStateOf(
+            result.timetables.mapIndexedNotNull { i, t ->
+                PhaseSchedule.suggestStart(t.title, result.timetables.take(i).map { it.title }, today)
+                    ?.takeIf { it > today }?.let { i to it }
+            }.toMap()
+        )
+    }
+    val context = LocalContext.current
 
     val chosen = result.timetables.getOrNull(table)
     val blocks: List<ImportedBlock> = chosen?.blocks?.filterIndexed { i, _ -> i !in excluded }.orEmpty()
     val focus = result.weeks.getOrNull(week)?.byDay.orEmpty()
     val rules = if (keepRules) result.rules else emptyList()
+    val later = startDates.filterKeys { it != table }.mapNotNull { (i, date) ->
+        result.timetables.getOrNull(i)?.let { Phase(date, it.title, it.blocks, it.wakeMinute, it.sleepMinute) }
+    }
 
     AetherScaffold(title = "My timetable") {
         LazyColumn(
@@ -121,6 +141,39 @@ fun ImportTimetableScreen(viewModel: RoutinesViewModel, onDone: () -> Unit) {
                 }
             }
 
+            if (result.timetables.size > 1) {
+                item {
+                    AetherCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Switch automatically later", style = MaterialTheme.typography.titleMedium, color = AetherTextPrimary)
+                        Text("Give another timetable a start date and it takes over that day, used as written. Check the dates.", style = MaterialTheme.typography.labelSmall, color = AetherTextSecondary)
+                        result.timetables.forEachIndexed { i, t ->
+                            if (i != table) {
+                                Spacer(Modifier.height(10.dp))
+                                Text(t.title, style = MaterialTheme.typography.bodyMedium, color = AetherTextPrimary)
+                                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    Text(
+                                        startDates[i]?.let { "Starts $it" } ?: "Set start date",
+                                        style = MaterialTheme.typography.labelLarge, color = AetherSky,
+                                        modifier = Modifier.clickable {
+                                            val shown = startDates[i]?.let(LocalDate::parse) ?: LocalDate.now().plusDays(1)
+                                            DatePickerDialog(
+                                                context,
+                                                { _, y, m, d -> startDates = startDates + (i to LocalDate.of(y, m + 1, d).toString()) },
+                                                shown.year, shown.monthValue - 1, shown.dayOfMonth
+                                            ).apply { datePicker.minDate = System.currentTimeMillis() + 86_400_000L }.show()
+                                        }.padding(vertical = 6.dp)
+                                    )
+                                    if (i in startDates) {
+                                        Text("Don't switch", style = MaterialTheme.typography.labelLarge, color = AetherTextSecondary,
+                                            modifier = Modifier.clickable { startDates = startDates - i }.padding(vertical = 6.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (result.weeks.isNotEmpty()) {
                 item {
                     AetherCard(modifier = Modifier.fillMaxWidth()) {
@@ -157,7 +210,7 @@ fun ImportTimetableScreen(viewModel: RoutinesViewModel, onDone: () -> Unit) {
                     Column {
                         AetherButton("Use my timetable", modifier = Modifier.fillMaxWidth(), enabled = !saving, onClick = {
                             saving = true
-                            viewModel.importTimetable(blocks, chosen?.wakeMinute, chosen?.sleepMinute, MyPlan(focus, rules), onDone)
+                            viewModel.importTimetable(blocks, chosen?.wakeMinute, chosen?.sleepMinute, MyPlan(focus, rules), later, onDone)
                         })
                         if (blocks.isNotEmpty()) {
                             Spacer(Modifier.height(6.dp))

@@ -46,6 +46,7 @@
 
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" />
         <receiver android:name=".alarm.AlarmActionReceiver" android:exported="false" />
+        <receiver android:name=".alarm.PhaseReceiver" android:exported="false" />
 
         <receiver android:name=".alarm.BootReceiver" android:exported="false">
             <intent-filter>

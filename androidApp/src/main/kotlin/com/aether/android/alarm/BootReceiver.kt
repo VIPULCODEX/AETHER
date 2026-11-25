@@ -19,6 +19,8 @@ class BootReceiver : BroadcastReceiver() {
         val app = context.applicationContext as AetherApplication
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // A phase may have started while the phone was off; this also re-arms the next switch.
+                app.phaseSwitcher.applyDue()
                 val slots = app.repository.observeScheduleSlots().first()
                 AlarmScheduler(context).rescheduleAll(slots)
             } finally {

@@ -3,6 +3,8 @@ package com.aether.core.data
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.aether.core.db.AetherDatabase
+import com.aether.core.engine.Phase
+import com.aether.core.engine.PhaseSchedule
 import com.aether.core.model.BehaviorEvent
 import com.aether.core.model.BehaviorEventType
 import com.aether.core.model.Chronotype
@@ -62,6 +64,17 @@ class PersonalizationRepository(private val database: AetherDatabase) {
         }
     }
 
+    /** Timetables of the user's plan that haven't started yet. */
+    fun observePhases(): Flow<List<Phase>> =
+        database.aetherQueries.selectAllPreferences()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> PhaseSchedule.decode(rows.firstOrNull { it.prefKey == KEY_PHASES }?.prefValue.orEmpty()) }
+
+    suspend fun savePhases(phases: List<Phase>) {
+        database.aetherQueries.upsertPreference(KEY_PHASES, PhaseSchedule.encode(phases.sortedBy { it.startDate }))
+    }
+
     fun observeBehaviorEvents(limit: Long = 500): Flow<List<BehaviorEvent>> =
         database.aetherQueries.selectRecentBehaviorEvents(limit)
             .asFlow()
@@ -110,6 +123,7 @@ class PersonalizationRepository(private val database: AetherDatabase) {
         const val AUTO = "AUTO"
         const val KEY_DAY_FOCUS = "dayFocus_"
         const val KEY_RULES = "myRules"
+        const val KEY_PHASES = "myPhases"
         const val KEY_PERSONA = "persona"
         const val KEY_TONE = "tone"
         const val KEY_PLANNING = "planningStyle"

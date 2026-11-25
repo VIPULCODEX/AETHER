@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import android.content.Intent
 import com.aether.android.data.ShareInbox
 import com.aether.android.navigation.AetherNavHost
@@ -37,10 +39,16 @@ class MainActivity : ComponentActivity() {
                     groqScheduleClient = app.groqScheduleClient,
                     claudeNotesClient = app.claudeNotesClient,
                     alarmPreferences = app.alarmPreferences,
-                    alarmScheduler = app.alarmScheduler
+                    alarmScheduler = app.alarmScheduler,
+                    phaseSwitcher = app.phaseSwitcher
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch { (application as AetherApplication).phaseSwitcher.applyDue() }
     }
 
     override fun onNewIntent(intent: Intent) {

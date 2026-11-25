@@ -3,10 +3,12 @@ package com.aether.android.ui.routines
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aether.android.alarm.AlarmScheduler
+import com.aether.android.alarm.PhaseSwitcher
 import com.aether.core.data.AetherRepository
 import com.aether.core.data.GoalsRepository
 import com.aether.core.data.MyPlan
 import com.aether.core.engine.ImportedBlock
+import com.aether.core.engine.Phase
 import com.aether.core.data.PersonalizationRepository
 import com.aether.core.data.RoutineRepository
 import com.aether.core.engine.PersonalizationEngine
@@ -29,8 +31,17 @@ class RoutinesViewModel(
     private val goalsRepository: GoalsRepository,
     private val personalizationRepository: PersonalizationRepository,
     private val personalizationEngine: PersonalizationEngine,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    private val phaseSwitcher: PhaseSwitcher
 ) : ViewModel() {
+
+    /** Timetables that will take over later. */
+    val upcoming: StateFlow<List<Phase>> = personalizationRepository.observePhases()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun cancelUpcoming() {
+        viewModelScope.launch { phaseSwitcher.setUpcoming(emptyList()) }
+    }
 
     private val planner = TimetablePlanner()
 
@@ -49,7 +60,7 @@ class RoutinesViewModel(
     }
 
     /** Adopts the user's own timetable as it is: their times, their sleep hours, their weekday focus and rules. */
-    fun importTimetable(blocks: List<ImportedBlock>, wakeMinute: Int?, sleepMinute: Int?, plan: MyPlan, onDone: () -> Unit) {
+    fun importTimetable(blocks: List<ImportedBlock>, wakeMinute: Int?, sleepMinute: Int?, plan: MyPlan, later: List<Phase>, onDone: () -> Unit) {
         viewModelScope.launch {
             if (blocks.isNotEmpty()) {
                 val prefs = personalizationRepository.observePrefs().first()
@@ -63,6 +74,8 @@ class RoutinesViewModel(
                 }
                 routineRepository.replaceWithImported(blocks)
                 rebuild()
+                // A new import replaces the whole plan, including any switches scheduled by an earlier one.
+                phaseSwitcher.setUpcoming(later)
             }
             if (plan.dayFocus.isNotEmpty() || plan.rules.isNotEmpty()) personalizationRepository.saveMyPlan(plan)
             onDone()
