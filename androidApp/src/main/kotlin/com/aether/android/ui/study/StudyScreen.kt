@@ -95,7 +95,7 @@ fun StudyScreen(viewModel: StudyViewModel) {
                     StudyTab.SOURCES -> sourcesTab(state, viewModel)
                     StudyTab.ASK -> askTab(state, viewModel)
                     StudyTab.DIGEST -> digestTab(state, viewModel)
-                    StudyTab.NOTES -> notesTab(state, vm)
+                    StudyTab.NOTES -> notesTab(state, viewModel)
                     StudyTab.PRACTICE -> practiceTab(state, viewModel)
                     StudyTab.MAP -> mapTab(state, viewModel)
                     StudyTab.CARDS -> cardsTab(state, viewModel)

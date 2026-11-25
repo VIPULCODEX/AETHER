@@ -23,7 +23,10 @@ All notable changes to AETHER are documented here. Format follows
 - Database schema v11 (migration 10.sqm).
 
 ### Fixed
-- 0.17.0 did not compile: the notes client was not passed through navigation.
+- 0.17.0 did not compile (notes client not passed through navigation, wrong
+  name in the Study Hub Notes tab), and CI reported the failed build as success.
+- Bottom nav bar stutter: no recomposition per touch move, cheaper glass on the
+  pill, and the pill no longer starts back toward the old tab on release.
 
 ## [0.17.0] - 2026-11-03
 

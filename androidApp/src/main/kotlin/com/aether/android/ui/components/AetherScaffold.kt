@@ -49,6 +49,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +69,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
 import com.aether.android.ui.theme.AetherBackground
 import com.aether.android.ui.theme.AetherBorder
 import com.aether.android.ui.theme.AetherSky
@@ -274,12 +277,18 @@ private fun GlassBottomNavBar(
         }.coerceAtLeast(0)
     }
 
+    val latestSelected by rememberUpdatedState(selectedIndex)
+    val latestNavigate by rememberUpdatedState(onNavigate)
+    // The tab just released on, held until the route catches up so the pill doesn't start back to the old one.
+    var committedIndex by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(currentRoute) { committedIndex = null }
+
     // Non-null only while a finger is down on the bar. dragIndex is the
     // nearest tab (icon tint + which tab a release commits to); dragOffsetPx
     // is the finger-relative target the pill chases.
     var dragIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffsetPx by remember { mutableStateOf<Float?>(null) }
-    val displayedIndex = dragIndex ?: selectedIndex
+    val displayedIndex = dragIndex ?: committedIndex ?: selectedIndex
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
 
@@ -292,19 +301,25 @@ private fun GlassBottomNavBar(
         val tabWidth = maxWidth / BOTTOM_NAV_ITEMS.size
         val tabWidthPx = with(density) { tabWidth.toPx() }
         val isHeld = dragIndex != null
-        val settledTargetPx = tabWidthPx * displayedIndex
 
         // The pill chases its target (the finger while held, the selected tab
         // otherwise) with a spring, so retargeting keeps its momentum. Both
         // springs are (near) critically damped: smooth glide, no wobble.
-        val pillX = remember { Animatable(settledTargetPx) }
-        val target = dragOffsetPx ?: settledTargetPx
-        LaunchedEffect(target, isHeld) {
-            pillX.animateTo(
-                target,
-                if (isHeld) spring(dampingRatio = 1f, stiffness = 900f)
-                else spring(dampingRatio = 0.82f, stiffness = 420f)
-            )
+        // The finger position is read inside snapshotFlow, not in composition:
+        // otherwise every touch move recomposes the whole bar.
+        val pillX = remember { Animatable(tabWidthPx * displayedIndex) }
+        LaunchedEffect(tabWidthPx) {
+            snapshotFlow {
+                val offset = dragOffsetPx
+                if (offset != null) offset to true
+                else tabWidthPx * (committedIndex ?: latestSelected) to false
+            }.collectLatest { (target, held) ->
+                pillX.animateTo(
+                    target,
+                    if (held) spring(dampingRatio = 1f, stiffness = 900f)
+                    else spring(dampingRatio = 0.82f, stiffness = 420f)
+                )
+            }
         }
 
         // Pops slightly larger when grabbed, relaxes on release. Uniform scale
@@ -360,8 +375,9 @@ private fun GlassBottomNavBar(
                             trackTouch(change.position.x)
                         }
                         dragIndex?.let { index ->
-                            if (index != selectedIndex) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                            onNavigate(BOTTOM_NAV_ITEMS[index].route)
+                            if (index != latestSelected) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            committedIndex = index
+                            latestNavigate(BOTTOM_NAV_ITEMS[index].route)
                         }
                         dragIndex = null
                         dragOffsetPx = null
@@ -381,7 +397,7 @@ private fun GlassBottomNavBar(
                         backdrop = backdrop,
                         shape = { RoundedCornerShape(50) },
                         effects = {
-                            lens(10.dp.toPx(), 14.dp.toPx(), chromaticAberration = true)
+                            lens(10.dp.toPx(), 14.dp.toPx())
                         },
                         // A pale, frosted tint (not a solid blue blob) so the glass and the icon on it stay legible.
                         onDrawSurface = {
