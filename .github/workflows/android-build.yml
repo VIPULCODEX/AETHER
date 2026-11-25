@@ -34,7 +34,9 @@ jobs:
         run: gradle :shared:testDebugUnitTest --no-daemon
         continue-on-error: true  # report-only until the first green run; flip to blocking after
 
+      # "shell: bash" turns on pipefail; without it the pipe into tee hides a failed build as success.
       - name: Build debug APK
+        shell: bash
         run: gradle :androidApp:assembleDebug --no-daemon 2>&1 | tee build.log
 
       # Compile errors otherwise sit in the raw log (admin-only); surface them as check annotations.
